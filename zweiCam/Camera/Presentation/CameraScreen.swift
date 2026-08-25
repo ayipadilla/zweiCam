@@ -18,14 +18,7 @@ struct CameraScreen: View {
             VStack(spacing: 24) {
                 topBar
 
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.white.opacity(0.08))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Color.white.opacity(0.16), lineWidth: 1)
-                    )
-                    .aspectRatio(3 / 4, contentMode: .fit)
-                    .padding(.horizontal, 24)
+                cameraPreviewBackground
 
                 modeSelector
 
@@ -36,6 +29,17 @@ struct CameraScreen: View {
             }
             .padding(.top, 18)
         }
+    }
+
+    private var cameraPreviewBackground: some View {
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(Color.white.opacity(0.08))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color.white.opacity(0.16), lineWidth: 1)
+            )
+            .aspectRatio(3 / 4, contentMode: .fit)
+            .padding(.horizontal, 24)
     }
 
     private var topBar: some View {
