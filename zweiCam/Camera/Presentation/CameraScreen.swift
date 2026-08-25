@@ -8,7 +8,10 @@
 import SwiftUI
 
 struct CameraScreen: View {
+    private let cameraSessionManager = CameraSessionManager()
+
     @State private var selectedMode = CameraMode.photo
+    @State private var isMultiCamSupported = false
 
     var body: some View {
         ZStack {
@@ -28,6 +31,19 @@ struct CameraScreen: View {
                     .padding(.bottom, 34)
             }
             .padding(.top, 18)
+        }
+        .task {
+            isMultiCamSupported = cameraSessionManager.isMultiCamSupported()
+
+            guard isMultiCamSupported else {
+                print("MultiCam is not supported")
+                return
+            }
+
+            print("MultiCam is supported")
+
+            let hasCameraAccess = await cameraSessionManager.requestCameraAccess()
+            print("Camera access: \(hasCameraAccess)")
         }
     }
 
