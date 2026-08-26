@@ -6,12 +6,18 @@
 //
 
 import AVFoundation
+import UIKit
 
 final class CameraSessionManager {
     private let multiCamSession = AVCaptureMultiCamSession()
+
     let backPreviewLayer = AVCaptureVideoPreviewLayer()
     let frontPreviewLayer = AVCaptureVideoPreviewLayer()
-    
+
+    private let backPhotoOutput = AVCapturePhotoOutput()
+    private let frontPhotoOutput = AVCapturePhotoOutput()
+    private var photoCaptureDelegate: PhotoCaptureDelegate?
+
     func isMultiCamSupported() -> Bool {
         AVCaptureMultiCamSession.isMultiCamSupported
     }
@@ -88,15 +94,68 @@ final class CameraSessionManager {
                     debugPrint("Cannot add front preview connection to multi-cam session")
                     return
                 }
-
+                
                 multiCamSession.addConnection(backPreviewConnection)
                 multiCamSession.addConnection(frontPreviewConnection)
+
+                guard multiCamSession.canAddOutput(backPhotoOutput) else {
+                    debugPrint("Cannot add back photo output to multi-cam session")
+                    return
+                }
+
+                guard multiCamSession.canAddOutput(frontPhotoOutput) else {
+                    debugPrint("Cannot add front photo output to multi-cam session")
+                    return
+                }
+                
+                multiCamSession.addOutputWithNoConnections(backPhotoOutput)
+                multiCamSession.addOutputWithNoConnections(frontPhotoOutput)
+                
+                let backPhotoConnection = AVCaptureConnection(
+                    inputPorts: [backVideoPort],
+                    output: backPhotoOutput
+                )
+
+                let frontPhotoConnection = AVCaptureConnection(
+                    inputPorts: [frontVideoPort],
+                    output: frontPhotoOutput
+                )
+
+                guard multiCamSession.canAddConnection(backPhotoConnection) else {
+                    debugPrint("Cannot add back photo connection to multi-cam session")
+                    return
+                }
+
+                guard multiCamSession.canAddConnection(frontPhotoConnection) else {
+                    debugPrint("Cannot add front photo connection to multi-cam session")
+                    return
+                }
+
+                multiCamSession.addConnection(backPhotoConnection)
+                multiCamSession.addConnection(frontPhotoConnection)
+
             }
 
             multiCamSession.startRunning()
             debugPrint("Back and front camera previews configured and multi-cam session started")
         } catch {
             debugPrint("Failed to create camera input: \(error)")
+        }
+    }
+    
+    func capturePhoto() async throws -> UIImage {
+        let settings = AVCapturePhotoSettings()
+        let delegate = PhotoCaptureDelegate()
+
+        photoCaptureDelegate = delegate
+
+        return try await withCheckedThrowingContinuation { continuation in
+            delegate.continuation = continuation
+
+            backPhotoOutput.capturePhoto(
+                with: settings,
+                delegate: delegate
+            )
         }
     }
 

@@ -112,7 +112,19 @@ struct CameraScreen: View {
     }
 
     private var shutterButton: some View {
-        Button {} label: {
+
+        Button {
+            Task {
+                do {
+                    let image = try await cameraSessionManager.capturePhoto()
+
+                    debugPrint("Photo captured: \(image.size)")
+                } catch {
+                    debugPrint("Failed to capture photo: \(error)")
+                }
+            }
+        } label: {
+
             Circle()
                 .strokeBorder(Color.white, lineWidth: 5)
                 .background(
