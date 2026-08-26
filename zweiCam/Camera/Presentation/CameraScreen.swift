@@ -86,12 +86,16 @@ struct CameraScreen: View {
             HStack {
                 Spacer()
 
-                Button("Feed") {}
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 9)
-                    .background(Color.white.opacity(0.12), in: Capsule())
+                NavigationLink {
+                    FeedScreen()
+                } label: {
+                    Text("Feed")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 9)
+                        .background(Color.white.opacity(0.12), in: Capsule())
+                }
             }
         }
         .frame(height: 44)
