@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CameraScreen: View {
     private let cameraSessionManager = CameraSessionManager()
+    private let mediaManager = MediaManager()
 
     @State private var selectedMode = CameraMode.photo
     @State private var isMultiCamSupported = false
@@ -116,9 +117,18 @@ struct CameraScreen: View {
         Button {
             Task {
                 do {
-                    let image = try await cameraSessionManager.capturePhoto()
+                    let photos = try await cameraSessionManager.captureDualPhoto()
 
-                    debugPrint("Photo captured: \(image.size)")
+                    debugPrint("Back photo captured: \(photos.backImage.size)")
+                    debugPrint("Front photo captured: \(photos.frontImage.size)")
+                    
+                    let post = try await mediaManager.savePost(
+                        backImage: photos.backImage,
+                        frontImage: photos.frontImage
+                    )
+
+                    debugPrint("Post saved: \(post.id)")
+                    
                 } catch {
                     debugPrint("Failed to capture photo: \(error)")
                 }

@@ -18,7 +18,7 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
         error: Error?
     ) {
         if let error {
-            continuation?.resume(throwing: error)
+            finish(with: .failure(error))
             return
         }
 
@@ -26,13 +26,16 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
             let data = photo.fileDataRepresentation(),
             let image = UIImage(data: data)
         else {
-            continuation?.resume(
-                throwing: PhotoCaptureError.failedToCreateImage
-            )
+            finish(with: .failure(PhotoCaptureError.failedToCreateImage))
             return
         }
 
-        continuation?.resume(returning: image)
+        finish(with: .success(image))
+    }
+    
+    private func finish(with result: Result<UIImage, Error>) {
+        continuation?.resume(with: result)
+        continuation = nil
     }
 }
 

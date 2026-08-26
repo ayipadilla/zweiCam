@@ -143,7 +143,10 @@ final class CameraSessionManager {
         }
     }
     
-    func capturePhoto() async throws -> UIImage {
+    private func capturePhoto(
+        from photoOutput: AVCapturePhotoOutput
+    ) async throws -> UIImage {
+
         let settings = AVCapturePhotoSettings()
         let delegate = PhotoCaptureDelegate()
 
@@ -152,11 +155,31 @@ final class CameraSessionManager {
         return try await withCheckedThrowingContinuation { continuation in
             delegate.continuation = continuation
 
-            backPhotoOutput.capturePhoto(
+            photoOutput.capturePhoto(
                 with: settings,
                 delegate: delegate
             )
         }
+    }
+    
+    func captureDualPhoto() async throws -> (
+        backImage: UIImage,
+        frontImage: UIImage
+    ) {
+        let backImage = try await capturePhoto(
+            from: backPhotoOutput
+        )
+
+        try await Task.sleep(for: .seconds(1.5))
+
+        let frontImage = try await capturePhoto(
+            from: frontPhotoOutput
+        )
+
+        return (
+            backImage: backImage,
+            frontImage: frontImage
+        )
     }
 
     func getBackCamera() -> AVCaptureDevice? {
