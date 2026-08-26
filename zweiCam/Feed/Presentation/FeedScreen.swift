@@ -29,7 +29,12 @@ struct FeedScreen: View {
                     spacing: 2
                 ) {
                     ForEach(posts) { post in
-                        FeedThumbnailView(post: post)
+                        NavigationLink {
+                            MediaViewerScreen(post: post)
+                        } label: {
+                            FeedThumbnailView(post: post)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 2)
