@@ -56,8 +56,11 @@ struct CameraScreen: View {
             cameraPreviewBackground
 
             if hasCameraAccess {
-                CameraPreviewView(previewLayer: cameraSessionManager.backPreviewLayer)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                CameraPreviewView(
+                    backPreviewLayer: cameraSessionManager.backPreviewLayer,
+                    frontPreviewLayer: cameraSessionManager.frontPreviewLayer
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
         }
         .aspectRatio(3 / 4, contentMode: .fit)
