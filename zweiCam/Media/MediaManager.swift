@@ -78,6 +78,22 @@ actor MediaManager {
 
     // MARK: - Media
 
+    func loadImage(
+        atRelativePath relativePath: String
+    ) throws -> UIImage {
+        let fileURL = try fileURL(
+            forRelativePath: relativePath
+        )
+
+        guard let image = UIImage(
+            contentsOfFile: fileURL.path
+        ) else {
+            throw MediaManagerError.failedToLoadImage
+        }
+
+        return image
+    }
+
     private func saveImage(
         _ image: UIImage,
         postID: UUID
@@ -225,4 +241,5 @@ actor MediaManager {
 private enum MediaManagerError: Error {
     case applicationSupportDirectoryNotFound
     case failedToCreateImageData
+    case failedToLoadImage
 }

@@ -21,14 +21,9 @@ struct CameraScreen: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 24) {
-                topBar
-
                 cameraPreview
-
                 modeSelector
-
                 Spacer()
-
                 shutterButton
                     .padding(.bottom, 34)
             }
@@ -75,31 +70,6 @@ struct CameraScreen: View {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .stroke(Color.white.opacity(0.16), lineWidth: 1)
             )
-    }
-
-    private var topBar: some View {
-        ZStack {
-            Text("zweiCam")
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(.white)
-
-            HStack {
-                Spacer()
-
-                NavigationLink {
-                    FeedScreen()
-                } label: {
-                    Text("Feed")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 9)
-                        .background(Color.white.opacity(0.12), in: Capsule())
-                }
-            }
-        }
-        .frame(height: 44)
-        .padding(.horizontal, 20)
     }
 
     private var modeSelector: some View {

@@ -9,10 +9,14 @@ import SwiftUI
 
 struct FeedScreen: View {
 
+    private let mediaManager = MediaManager()
+
     private let columns = Array(
         repeating: GridItem(.flexible(), spacing: 2),
         count: 4
     )
+
+    @State private var posts: [Post] = []
 
     var body: some View {
         ZStack {
@@ -24,17 +28,37 @@ struct FeedScreen: View {
                     columns: columns,
                     spacing: 2
                 ) {
-                    ForEach(0..<20, id: \.self) { _ in
-                        Rectangle()
-                            .fill(Color.white.opacity(0.15))
-                            .aspectRatio(3.0 / 4.0, contentMode: .fit)
+                    ForEach(posts) { post in
+                        FeedThumbnailView(post: post)
                     }
                 }
                 .padding(.horizontal, 2)
+                .padding(.top, 16)
             }
         }
-        .navigationTitle("Your Feed")
+        .navigationTitle("zweiCam")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    CameraScreen()
+                } label: {
+                    Image(systemName: "camera")
+                        .foregroundStyle(.white)
+                }
+            }
+        }
+        .task {
+            await loadPosts()
+        }
+    }
+
+    private func loadPosts() async {
+        do {
+            posts = try await mediaManager.loadPosts()
+        } catch {
+            debugPrint("Failed to load posts: \(error)")
+        }
     }
 }
 
