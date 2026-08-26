@@ -12,6 +12,7 @@ struct CameraScreen: View {
 
     @State private var selectedMode = CameraMode.photo
     @State private var isMultiCamSupported = false
+    @State private var hasCameraAccess = false
 
     var body: some View {
         ZStack {
@@ -21,7 +22,7 @@ struct CameraScreen: View {
             VStack(spacing: 24) {
                 topBar
 
-                cameraPreviewBackground
+                cameraPreview
 
                 modeSelector
 
@@ -39,12 +40,28 @@ struct CameraScreen: View {
                 print("MultiCam is not supported")
                 return
             }
-
             print("MultiCam is supported")
 
-            let hasCameraAccess = await cameraSessionManager.requestCameraAccess()
+            hasCameraAccess = await cameraSessionManager.requestCameraAccess()
             print("Camera access: \(hasCameraAccess)")
+            
+            if isMultiCamSupported && hasCameraAccess {
+                cameraSessionManager.start()
+            }
         }
+    }
+
+    private var cameraPreview: some View {
+        ZStack {
+            cameraPreviewBackground
+
+            if hasCameraAccess {
+                CameraPreviewView(previewLayer: cameraSessionManager.backPreviewLayer)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+        }
+        .aspectRatio(3 / 4, contentMode: .fit)
+        .padding(.horizontal, 24)
     }
 
     private var cameraPreviewBackground: some View {
@@ -54,8 +71,6 @@ struct CameraScreen: View {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .stroke(Color.white.opacity(0.16), lineWidth: 1)
             )
-            .aspectRatio(3 / 4, contentMode: .fit)
-            .padding(.horizontal, 24)
     }
 
     private var topBar: some View {
