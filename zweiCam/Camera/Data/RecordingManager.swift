@@ -11,14 +11,68 @@ final class RecordingManager {
 
     private var isRecording = false
 
-    func startRecording() {
+    private var backVideoWriter: AVAssetWriter?
+    private var frontVideoWriter: AVAssetWriter?
+
+    private var backVideoInput: AVAssetWriterInput?
+    private var frontVideoInput: AVAssetWriterInput?
+
+    func startRecording() throws {
         guard !isRecording else {
             return
         }
 
+        let backVideoURL = createTemporaryURL(
+            filename: "back.mov"
+        )
+
+        let frontVideoURL = createTemporaryURL(
+            filename: "front.mov"
+        )
+
+        backVideoWriter = try AVAssetWriter(
+            outputURL: backVideoURL,
+            fileType: .mov
+        )
+
+        frontVideoWriter = try AVAssetWriter(
+            outputURL: frontVideoURL,
+            fileType: .mov
+        )
+
+        backVideoInput = AVAssetWriterInput(
+            mediaType: .video,
+            outputSettings: nil
+        )
+
+        frontVideoInput = AVAssetWriterInput(
+            mediaType: .video,
+            outputSettings: nil
+        )
+
+        guard
+            let backVideoWriter,
+            let frontVideoWriter,
+            let backVideoInput,
+            let frontVideoInput
+        else {
+            return
+        }
+
+        guard backVideoWriter.canAdd(backVideoInput) else {
+            throw RecordingError.cannotAddBackVideoInput
+        }
+
+        guard frontVideoWriter.canAdd(frontVideoInput) else {
+            throw RecordingError.cannotAddFrontVideoInput
+        }
+
+        backVideoWriter.add(backVideoInput)
+        frontVideoWriter.add(frontVideoInput)
+
         isRecording = true
 
-        debugPrint("Recording started")
+        debugPrint("Recording writers configured")
     }
 
     func stopRecording() {
@@ -38,7 +92,7 @@ final class RecordingManager {
             return
         }
 
-        // Step 5B
+        // Step 5C
     }
 
     func appendFrontVideo(
@@ -48,7 +102,7 @@ final class RecordingManager {
             return
         }
 
-        // Step 5B
+        // Step 5C
     }
 
     func appendAudio(
@@ -58,7 +112,26 @@ final class RecordingManager {
             return
         }
 
-        // Step 5C
+        // Later step
     }
+
+    private func createTemporaryURL(
+        filename: String
+    ) -> URL {
+
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent(filename)
+
+        try? FileManager.default.removeItem(at: url)
+
+        return url
+    }
+
+}
+
+private enum RecordingError: Error {
+
+    case cannotAddBackVideoInput
+    case cannotAddFrontVideoInput
 
 }
