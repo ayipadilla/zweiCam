@@ -32,10 +32,16 @@ final class CameraSessionManager {
             debugPrint("Front camera not found")
             return
         }
+        
+        guard let microphone = AVCaptureDevice.default(for: .audio) else {
+            debugPrint("Microphone not found")
+            return
+        }
 
         do {
             let backCameraInput = try AVCaptureDeviceInput(device: backCamera)
             let frontCameraInput = try AVCaptureDeviceInput(device: frontCamera)
+            let microphoneInput = try AVCaptureDeviceInput(device: microphone)
 
             do {
                 multiCamSession.beginConfiguration()
@@ -50,9 +56,15 @@ final class CameraSessionManager {
                     debugPrint("Cannot add front camera input to multi-cam session")
                     return
                 }
+                
+                guard multiCamSession.canAddInput(microphoneInput) else {
+                    debugPrint("Cannot add microphone input to multi-cam session")
+                    return
+                }
 
                 multiCamSession.addInputWithNoConnections(backCameraInput)
                 multiCamSession.addInputWithNoConnections(frontCameraInput)
+                multiCamSession.addInputWithNoConnections(microphoneInput)
 
                 guard let backVideoPort = backCameraInput.ports(
                     for: .video,
