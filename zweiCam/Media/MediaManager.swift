@@ -181,6 +181,59 @@ actor MediaManager {
             frontPath.stroke()
         }
     }
+    
+    func saveVideoAssets(
+        backVideoURL: URL,
+        frontVideoURL: URL,
+        audioURL: URL,
+        postID: UUID
+    ) throws -> (
+        backVideoPath: String,
+        frontVideoPath: String,
+        audioPath: String
+    ) {
+        let directoryPath = "\(Storage.mediaDirectoryName)/\(postID.uuidString)"
+
+        let backVideoPath = "\(directoryPath)/back.mov"
+        let frontVideoPath = "\(directoryPath)/front.mov"
+        let audioPath = "\(directoryPath)/audio.m4a"
+
+        let backVideoFileURL = try fileURL(
+            forRelativePath: backVideoPath
+        )
+        let frontVideoFileURL = try fileURL(
+            forRelativePath: frontVideoPath
+        )
+        let audioFileURL = try fileURL(
+            forRelativePath: audioPath
+        )
+
+        try FileManager.default.createDirectory(
+            at: backVideoFileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+
+        try FileManager.default.copyItem(
+            at: backVideoURL,
+            to: backVideoFileURL
+        )
+
+        try FileManager.default.copyItem(
+            at: frontVideoURL,
+            to: frontVideoFileURL
+        )
+
+        try FileManager.default.copyItem(
+            at: audioURL,
+            to: audioFileURL
+        )
+
+        return (
+            backVideoPath: backVideoPath,
+            frontVideoPath: frontVideoPath,
+            audioPath: audioPath
+        )
+    }
 
     // MARK: - Storage
 
