@@ -555,6 +555,14 @@ final class CameraSessionManager {
             debugPrint("Back video: \(recording.backVideoURL)")
             debugPrint("Front video: \(recording.frontVideoURL)")
             debugPrint("Audio: \(recording.audioURL)")
+            
+            let thumbnails = try await recordingManager.generateThumbnails(
+                backVideoURL: recording.backVideoURL,
+                frontVideoURL: recording.frontVideoURL
+            )
+
+            debugPrint("Back thumbnail generated: \(thumbnails.back.size)")
+            debugPrint("Front thumbnail generated: \(thumbnails.front.size)")
         } catch {
             debugPrint("Failed to stop recording: \(error)")
         }
