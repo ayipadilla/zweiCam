@@ -18,12 +18,12 @@ struct FeedThumbnailView: View {
     var body: some View {
         Rectangle()
             .fill(Color.white.opacity(0.15))
-            .aspectRatio(3.0 / 4.0, contentMode: .fit)
+            .aspectRatio(3.0 / 4.0, contentMode: .fit) // TODO: Fix aspect ratio
             .overlay {
                 if let thumbnail {
                     Image(uiImage: thumbnail)
                         .resizable()
-                        .scaledToFill()
+                        .scaledToFit()
                         .clipped()
                 } else {
                     Image(systemName: "photo")
@@ -33,6 +33,7 @@ struct FeedThumbnailView: View {
                         .foregroundStyle(.white.opacity(0.5))
                 }
             }
+            .clipped()
             .task {
                 await loadThumbnail()
             }
