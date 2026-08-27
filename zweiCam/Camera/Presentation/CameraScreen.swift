@@ -50,6 +50,9 @@ struct CameraScreen: View {
                 cameraSessionManager.start()
             }
         }
+        .onDisappear {
+            cameraSessionManager.stop()
+        }
     }
 
     private var cameraPreview: some View {
@@ -83,7 +86,7 @@ struct CameraScreen: View {
                 Button {
                     selectedMode = mode
                     if mode == .video {
-                        cameraSessionManager.configureAudio()
+                        cameraSessionManager.configureVideoCapture()
                     }
                 } label: {
                     Text(mode.title)
