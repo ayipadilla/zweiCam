@@ -14,6 +14,7 @@ struct CameraScreen: View {
     @State private var selectedMode = CameraMode.photo
     @State private var isMultiCamSupported = false
     @State private var hasCameraAccess = false
+    @State private var isRecording = false
 
     var body: some View {
         ZStack {
@@ -150,7 +151,13 @@ struct CameraScreen: View {
     
     private var videoButton: some View {
         Button {
-            debugPrint("Video button tapped")
+            if isRecording {
+                cameraSessionManager.stopRecording()
+                isRecording = false
+            } else {
+                cameraSessionManager.startRecording()
+                isRecording = true
+            }
         } label: {
             Circle()
                 .strokeBorder(Color.red, lineWidth: 5)

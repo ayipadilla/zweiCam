@@ -21,20 +21,29 @@ final class CameraSessionManager {
     
     private var isAudioConfigured = false
     private var isVideoCaptureConfigured = false
+    private var isRecording = false
     private var videoPorts: VideoPorts?
     private let backVideoOutput = AVCaptureVideoDataOutput()
     private let frontVideoOutput = AVCaptureVideoDataOutput()
     private let audioOutput = AVCaptureAudioDataOutput()
 
-    private let backSampleBufferDelegate = SampleBufferDelegate(
+    private lazy var backSampleBufferDelegate = SampleBufferDelegate(
         streamName: "back video"
-    )
-    private let frontSampleBufferDelegate = SampleBufferDelegate(
+    ) { [weak self] sampleBuffer in
+        self?.handleBackVideoSampleBuffer(sampleBuffer)
+    }
+
+    private lazy var frontSampleBufferDelegate = SampleBufferDelegate(
         streamName: "front video"
-    )
-    private let audioSampleBufferDelegate = SampleBufferDelegate(
+    ) { [weak self] sampleBuffer in
+        self?.handleFrontVideoSampleBuffer(sampleBuffer)
+    }
+
+    private lazy var audioSampleBufferDelegate = SampleBufferDelegate(
         streamName: "audio"
-    )
+    ) { [weak self] sampleBuffer in
+        self?.handleAudioSampleBuffer(sampleBuffer)
+    }
     private let backVideoOutputQueue = DispatchQueue(
         label: "com.moment.backVideoOutput"
     )
@@ -49,7 +58,7 @@ final class CameraSessionManager {
         AVCaptureMultiCamSession.isMultiCamSupported
     }
     
-    // MARK - Setup
+    // MARK: - Setup
 
     private struct VideoPorts {
         let back: AVCaptureInput.Port
@@ -407,7 +416,37 @@ final class CameraSessionManager {
         debugPrint("Multi-cam session stopped")
     }
 
-    // MARK - Photo
+    private func handleBackVideoSampleBuffer(
+        _ sampleBuffer: CMSampleBuffer
+    ) {
+        guard isRecording else {
+            return
+        }
+
+        debugPrint("Recording back video sample buffer")
+    }
+
+    private func handleFrontVideoSampleBuffer(
+        _ sampleBuffer: CMSampleBuffer
+    ) {
+        guard isRecording else {
+            return
+        }
+
+        debugPrint("Recording front video sample buffer")
+    }
+
+    private func handleAudioSampleBuffer(
+        _ sampleBuffer: CMSampleBuffer
+    ) {
+        guard isRecording else {
+            return
+        }
+
+        debugPrint("Recording audio sample buffer")
+    }
+
+    // MARK: - Photo
     private func capturePhoto(
         from photoOutput: AVCapturePhotoOutput
     ) async throws -> UIImage {
@@ -468,7 +507,7 @@ final class CameraSessionManager {
         }
     }
     
-    // MARK - Video
+    // MARK: - Video
     func requestMicrophoneAccess() async -> Bool {
         switch AVCaptureDevice.authorizationStatus(for: .audio) {
         case .authorized:
@@ -480,6 +519,24 @@ final class CameraSessionManager {
         @unknown default:
             false
         }
+    }
+    
+    func startRecording() {
+        guard !isRecording else {
+            return
+        }
+
+        isRecording = true
+        debugPrint("Recording started")
+    }
+
+    func stopRecording() {
+        guard isRecording else {
+            return
+        }
+
+        isRecording = false
+        debugPrint("Recording stopped")
     }
 }
 

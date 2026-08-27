@@ -7,11 +7,20 @@
 
 import AVFoundation
 
-final class SampleBufferDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudioDataOutputSampleBufferDelegate {
+final class SampleBufferDelegate: NSObject,
+    AVCaptureVideoDataOutputSampleBufferDelegate,
+    AVCaptureAudioDataOutputSampleBufferDelegate {
+
     let streamName: String
 
-    init(streamName: String) {
+    var onSampleBuffer: ((CMSampleBuffer) -> Void)?
+
+    init(
+        streamName: String,
+        onSampleBuffer: ((CMSampleBuffer) -> Void)? = nil
+    ) {
         self.streamName = streamName
+        self.onSampleBuffer = onSampleBuffer
     }
 
     func captureOutput(
@@ -19,6 +28,7 @@ final class SampleBufferDelegate: NSObject, AVCaptureVideoDataOutputSampleBuffer
         didOutput sampleBuffer: CMSampleBuffer,
         from connection: AVCaptureConnection
     ) {
-        debugPrint("Received \(streamName) sample buffer")
+        onSampleBuffer?(sampleBuffer)
     }
+
 }
