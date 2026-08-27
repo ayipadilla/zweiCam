@@ -10,6 +10,7 @@ import AVFoundation
 final class RecordingManager {
 
     private var isRecording = false
+    private var recordingStartTime: CMTime?
 
     private var backVideoWriter: AVAssetWriter?
     private var frontVideoWriter: AVAssetWriter?
@@ -21,6 +22,8 @@ final class RecordingManager {
         guard !isRecording else {
             return
         }
+
+        recordingStartTime = nil
 
         let backVideoURL = createTemporaryURL(
             filename: "back.mov"
@@ -88,21 +91,62 @@ final class RecordingManager {
     func appendBackVideo(
         sampleBuffer: CMSampleBuffer
     ) {
-        guard isRecording else {
-            return
-        }
-
-        // Step 5C
+        appendVideo(
+            sampleBuffer: sampleBuffer,
+            writer: backVideoWriter,
+            input: backVideoInput
+        )
     }
 
     func appendFrontVideo(
         sampleBuffer: CMSampleBuffer
     ) {
-        guard isRecording else {
+        appendVideo(
+            sampleBuffer: sampleBuffer,
+            writer: frontVideoWriter,
+            input: frontVideoInput
+        )
+    }
+    
+    private func appendVideo(
+        sampleBuffer: CMSampleBuffer,
+        writer: AVAssetWriter?,
+        input: AVAssetWriterInput?
+    ) {
+        guard isRecording,
+              let writer,
+              let input
+        else {
             return
         }
 
-        // Step 5C
+        let presentationTime = CMSampleBufferGetPresentationTimeStamp(
+            sampleBuffer
+        )
+
+        if recordingStartTime == nil {
+            recordingStartTime = presentationTime
+        }
+
+        if writer.status == .unknown {
+            writer.startWriting()
+
+            if let recordingStartTime {
+                writer.startSession(
+                    atSourceTime: recordingStartTime
+                )
+            }
+        }
+
+        guard writer.status == .writing else {
+            return
+        }
+
+        guard input.isReadyForMoreMediaData else {
+            return
+        }
+
+        input.append(sampleBuffer)
     }
 
     func appendAudio(
