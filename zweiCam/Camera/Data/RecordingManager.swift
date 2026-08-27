@@ -224,11 +224,20 @@ final class RecordingManager {
                 return
             }
 
+            let dimensions = CMVideoFormatDescriptionGetDimensions(
+                formatDescription
+            )
+
             let newInput = AVAssetWriterInput(
                 mediaType: .video,
-                outputSettings: nil,
-                sourceFormatHint: formatDescription
+                outputSettings: [
+                    AVVideoCodecKey: AVVideoCodecType.h264,
+                    AVVideoWidthKey: Int(dimensions.width),
+                    AVVideoHeightKey: Int(dimensions.height)
+                ]
             )
+            
+            newInput.transform = CGAffineTransform(rotationAngle: .pi / 2)
 
             guard writer.canAdd(newInput) else {
                 return
@@ -324,7 +333,7 @@ final class RecordingManager {
             return nil
         }
 
-        return UIImage(cgImage: cgImage)
+        return UIImage(cgImage: cgImage, scale: 1.0, orientation: .right)
     }
 
     private func createTemporaryURL(
