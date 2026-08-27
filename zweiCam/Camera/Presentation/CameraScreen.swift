@@ -41,6 +41,11 @@ struct CameraScreen: View {
             hasCameraAccess = await cameraSessionManager.requestCameraAccess()
             print("Camera access: \(hasCameraAccess)")
             
+            let hasMicrophoneAccess =
+                await cameraSessionManager.requestMicrophoneAccess()
+
+            print("Microphone access: \(hasMicrophoneAccess)")
+            
             if isMultiCamSupported && hasCameraAccess {
                 cameraSessionManager.start()
             }

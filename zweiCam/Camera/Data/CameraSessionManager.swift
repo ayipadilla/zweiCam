@@ -202,4 +202,17 @@ final class CameraSessionManager {
             false
         }
     }
+    
+    func requestMicrophoneAccess() async -> Bool {
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .authorized:
+            true
+        case .notDetermined:
+            await AVCaptureDevice.requestAccess(for: .audio)
+        case .denied, .restricted:
+            false
+        @unknown default:
+            false
+        }
+    }
 }

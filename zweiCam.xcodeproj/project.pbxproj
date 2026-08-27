@@ -10,9 +10,22 @@
 		F3095C8D303DF39900883E6C /* zweiCam.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = zweiCam.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F3A55C643040255E008F69DC /* Exceptions for "zweiCam" folder in "zweiCam" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = F3095C8C303DF39900883E6C /* zweiCam */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F3095C8F303DF39900883E6C /* zweiCam */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F3A55C643040255E008F69DC /* Exceptions for "zweiCam" folder in "zweiCam" target */,
+			);
 			path = zweiCam;
 			sourceTree = "<group>";
 		};
@@ -254,7 +267,9 @@
 				DEVELOPMENT_TEAM = 567R53M57K;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = zweiCam/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "zweiCam uses the camera to capture photos and videos from both cameras";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "zweiCam needs microphone access to record audio with videos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -287,7 +302,9 @@
 				DEVELOPMENT_TEAM = 567R53M57K;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = zweiCam/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "zweiCam uses the camera to capture photos and videos from both cameras";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "zweiCam needs microphone access to record audio with videos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
