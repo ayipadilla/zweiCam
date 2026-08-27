@@ -49,6 +49,7 @@ actor MediaManager {
             mediaType: .photo,
             backMediaPath: backMediaPath,
             frontMediaPath: frontMediaPath,
+            audioMediaPath: nil,
             thumbnailPath: thumbnailPath
         )
 
@@ -77,6 +78,12 @@ actor MediaManager {
     }
 
     // MARK: - Media
+
+    func loadMediaURL(
+        atRelativePath relativePath: String
+    ) throws -> URL {
+        try fileURL(forRelativePath: relativePath)
+    }
 
     func loadImage(
         atRelativePath relativePath: String
@@ -208,6 +215,7 @@ actor MediaManager {
             mediaType: .video,
             backMediaPath: videoPaths.backVideoPath,
             frontMediaPath: videoPaths.frontVideoPath,
+            audioMediaPath: videoPaths.audioPath,
             thumbnailPath: thumbnailPath
         )
 

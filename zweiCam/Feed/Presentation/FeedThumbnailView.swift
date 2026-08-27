@@ -58,6 +58,7 @@ struct FeedThumbnailView: View {
             mediaType: .photo,
             backMediaPath: "",
             frontMediaPath: "",
+            audioMediaPath: nil,
             thumbnailPath: ""
         )
     )

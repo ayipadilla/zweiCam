@@ -6,14 +6,20 @@
 //
 
 import SwiftUI
+import AVKit
 
 struct MediaViewerScreen: View {
+
     let post: Post
 
     private let mediaManager = MediaManager()
 
     @State private var backImage: UIImage?
     @State private var frontImage: UIImage?
+
+    @State private var backPlayer: AVPlayer?
+    @State private var frontPlayer: AVPlayer?
+    @State private var audioPlayer: AVPlayer?
 
     var body: some View {
 
@@ -24,58 +30,14 @@ struct MediaViewerScreen: View {
 
             VStack {
 
-                if let backImage {
-
-                    ZStack(alignment: .topLeading) {
-
-                        Image(uiImage: backImage)
-                            .resizable()
-                            .scaledToFit()
-                            .clipShape(
-                                RoundedRectangle(
-                                    cornerRadius: 20,
-                                    style: .continuous
-                                )
-                            )
-
-                        if let frontImage {
-
-                            Image(uiImage: frontImage)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(
-                                    width: 120,
-                                    height: 160
-                                )
-                                .clipShape(
-                                    RoundedRectangle(
-                                        cornerRadius: 14,
-                                        style: .continuous
-                                    )
-                                )
-                                .overlay(
-                                    RoundedRectangle(
-                                        cornerRadius: 14,
-                                        style: .continuous
-                                    )
-                                    .stroke(
-                                        Color.black,
-                                        lineWidth: 3
-                                    )
-                                )
-                                .padding(12)
-
-                        }
-
-                    }
-                    .padding(.horizontal, 20)
-
+                if post.mediaType == .photo {
+                    photoContent
+                } else {
+                    videoContent
                 }
 
                 Spacer()
-
             }
-
         }
         .navigationTitle(
             post.createdAt.formatted(
@@ -86,7 +48,127 @@ struct MediaViewerScreen: View {
         )
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            do {
+            await loadMedia()
+        }
+        .onDisappear {
+            backPlayer?.pause()
+            frontPlayer?.pause()
+            audioPlayer?.pause()
+        }
+    }
+
+    private var photoContent: some View {
+
+        if let backImage {
+
+            return AnyView(
+                ZStack(alignment: .topLeading) {
+
+                    Image(uiImage: backImage)
+                        .resizable()
+                        .scaledToFit()
+                        .clipShape(
+                            RoundedRectangle(
+                                cornerRadius: 20,
+                                style: .continuous
+                            )
+                        )
+
+                    if let frontImage {
+
+                        Image(uiImage: frontImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(
+                                width: 120,
+                                height: 160
+                            )
+                            .clipShape(
+                                RoundedRectangle(
+                                    cornerRadius: 14,
+                                    style: .continuous
+                                )
+                            )
+                            .overlay(
+                                RoundedRectangle(
+                                    cornerRadius: 14,
+                                    style: .continuous
+                                )
+                                .stroke(
+                                    Color.black,
+                                    lineWidth: 3
+                                )
+                            )
+                            .padding(12)
+                    }
+                }
+                .padding(.horizontal, 20)
+            )
+
+        } else {
+
+            return AnyView(EmptyView())
+        }
+    }
+
+    private var videoContent: some View {
+
+        if let backPlayer {
+
+            return AnyView(
+                ZStack(alignment: .topLeading) {
+
+                    VideoPlayer(player: backPlayer)
+                        .aspectRatio(3 / 4, contentMode: .fit)
+                        .clipShape(
+                            RoundedRectangle(
+                                cornerRadius: 20,
+                                style: .continuous
+                            )
+                        )
+
+                    if let frontPlayer {
+
+                        VideoPlayer(player: frontPlayer)
+                            .frame(
+                                width: 120,
+                                height: 160
+                            )
+                            .clipShape(
+                                RoundedRectangle(
+                                    cornerRadius: 14,
+                                    style: .continuous
+                                )
+                            )
+                            .overlay(
+                                RoundedRectangle(
+                                    cornerRadius: 14,
+                                    style: .continuous
+                                )
+                                .stroke(
+                                    Color.black,
+                                    lineWidth: 3
+                                )
+                            )
+                            .padding(12)
+                            .allowsHitTesting(false)
+                    }
+                }
+                .padding(.horizontal, 20)
+            )
+
+        } else {
+
+            return AnyView(EmptyView())
+        }
+    }
+
+    private func loadMedia() async {
+
+        do {
+
+            if post.mediaType == .photo {
+
                 backImage = try await mediaManager.loadImage(
                     atRelativePath: post.backMediaPath
                 )
@@ -94,20 +176,40 @@ struct MediaViewerScreen: View {
                 frontImage = try await mediaManager.loadImage(
                     atRelativePath: post.frontMediaPath
                 )
-            } catch {
-                debugPrint("Failed to load post images: \(error)")
+
+            } else {
+
+                let backURL = try await mediaManager.loadMediaURL(
+                    atRelativePath: post.backMediaPath
+                )
+
+                let frontURL = try await mediaManager.loadMediaURL(
+                    atRelativePath: post.frontMediaPath
+                )
+
+                let newBackPlayer = AVPlayer(url: backURL)
+                let newFrontPlayer = AVPlayer(url: frontURL)
+
+                backPlayer = newBackPlayer
+                frontPlayer = newFrontPlayer
+
+                newBackPlayer.play()
+                newFrontPlayer.play()
+
+                if let audioPath = post.audioMediaPath {
+                    let audioURL = try await mediaManager.loadMediaURL(
+                        atRelativePath: audioPath
+                    )
+
+                    let newAudioPlayer = AVPlayer(url: audioURL)
+                    audioPlayer = newAudioPlayer
+                    newAudioPlayer.play()
+                }
             }
+
+        } catch {
+
+            debugPrint("Failed to load post media: \(error)")
         }
-
     }
-    
-
 }
-
-//#Preview {
-//
-//    NavigationStack {
-//        MediaViewerScreen(post: Post(/* ... */))
-//    }
-//
-//}

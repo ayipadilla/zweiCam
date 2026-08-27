@@ -18,5 +18,6 @@ struct Post: Codable, Identifiable {
     let mediaType: MediaType
     let backMediaPath: String
     let frontMediaPath: String
+    let audioMediaPath: String?
     let thumbnailPath: String
 }
