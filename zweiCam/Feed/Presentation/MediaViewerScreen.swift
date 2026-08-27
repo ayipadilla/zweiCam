@@ -8,8 +8,12 @@
 import SwiftUI
 
 struct MediaViewerScreen: View {
-
     let post: Post
+
+    private let mediaManager = MediaManager()
+
+    @State private var backImage: UIImage?
+    @State private var frontImage: UIImage?
 
     var body: some View {
 
@@ -20,26 +24,83 @@ struct MediaViewerScreen: View {
 
             VStack {
 
-                RoundedRectangle(
-                    cornerRadius: 20,
-                    style: .continuous
-                )
-                .fill(Color.white.opacity(0.08))
-                .aspectRatio(
-                    3 / 4,
-                    contentMode: .fit
-                )
-                .padding(.horizontal, 20)
+                if let backImage {
+
+                    ZStack(alignment: .topLeading) {
+
+                        Image(uiImage: backImage)
+                            .resizable()
+                            .scaledToFit()
+                            .clipShape(
+                                RoundedRectangle(
+                                    cornerRadius: 20,
+                                    style: .continuous
+                                )
+                            )
+
+                        if let frontImage {
+
+                            Image(uiImage: frontImage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(
+                                    width: 120,
+                                    height: 160
+                                )
+                                .clipShape(
+                                    RoundedRectangle(
+                                        cornerRadius: 14,
+                                        style: .continuous
+                                    )
+                                )
+                                .overlay(
+                                    RoundedRectangle(
+                                        cornerRadius: 14,
+                                        style: .continuous
+                                    )
+                                    .stroke(
+                                        Color.black,
+                                        lineWidth: 3
+                                    )
+                                )
+                                .padding(12)
+
+                        }
+
+                    }
+                    .padding(.horizontal, 20)
+
+                }
 
                 Spacer()
 
             }
 
         }
-        .navigationTitle("19 August")
+        .navigationTitle(
+            post.createdAt.formatted(
+                .dateTime
+                    .day()
+                    .month(.wide)
+            )
+        )
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            do {
+                backImage = try await mediaManager.loadImage(
+                    atRelativePath: post.backMediaPath
+                )
+
+                frontImage = try await mediaManager.loadImage(
+                    atRelativePath: post.frontMediaPath
+                )
+            } catch {
+                debugPrint("Failed to load post images: \(error)")
+            }
+        }
 
     }
+    
 
 }
 
