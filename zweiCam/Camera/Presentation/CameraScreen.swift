@@ -82,6 +82,9 @@ struct CameraScreen: View {
             ForEach(CameraMode.allCases) { mode in
                 Button {
                     selectedMode = mode
+                    if mode == .video {
+                        cameraSessionManager.configureAudio()
+                    }
                 } label: {
                     Text(mode.title)
                         .font(.caption.weight(.bold))
