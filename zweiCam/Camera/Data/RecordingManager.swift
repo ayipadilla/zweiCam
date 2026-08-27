@@ -17,6 +17,9 @@ final class RecordingManager {
 
     private var backVideoInput: AVAssetWriterInput?
     private var frontVideoInput: AVAssetWriterInput?
+    
+    private var backVideoURL: URL?
+    private var frontVideoURL: URL?
 
     func startRecording() throws {
         guard !isRecording else {
@@ -32,6 +35,9 @@ final class RecordingManager {
         let frontVideoURL = createTemporaryURL(
             filename: "front.mov"
         )
+        
+        self.backVideoURL = backVideoURL
+        self.frontVideoURL = frontVideoURL
 
         backVideoWriter = try AVAssetWriter(
             outputURL: backVideoURL,
@@ -78,14 +84,43 @@ final class RecordingManager {
         debugPrint("Recording writers configured")
     }
 
-    func stopRecording() {
-        guard isRecording else {
-            return
+    func stopRecording() async throws -> (
+        backVideoURL: URL,
+        frontVideoURL: URL
+    ) {
+        guard isRecording,
+              let backVideoWriter,
+              let frontVideoWriter,
+              let backVideoInput,
+              let frontVideoInput,
+              let backVideoURL,
+              let frontVideoURL
+        else {
+            throw RecordingError.recordingNotFound
         }
 
         isRecording = false
 
-        debugPrint("Recording stopped")
+        backVideoInput.markAsFinished()
+        frontVideoInput.markAsFinished()
+
+        await backVideoWriter.finishWriting()
+        await frontVideoWriter.finishWriting()
+
+        guard backVideoWriter.status == .completed else {
+            throw RecordingError.backVideoWritingFailed
+        }
+
+        guard frontVideoWriter.status == .completed else {
+            throw RecordingError.frontVideoWritingFailed
+        }
+
+        debugPrint("Back and front video recordings finished")
+
+        return (
+            backVideoURL: backVideoURL,
+            frontVideoURL: frontVideoURL
+        )
     }
 
     func appendBackVideo(
@@ -174,8 +209,9 @@ final class RecordingManager {
 }
 
 private enum RecordingError: Error {
-
     case cannotAddBackVideoInput
     case cannotAddFrontVideoInput
-
+    case recordingNotFound
+    case backVideoWritingFailed
+    case frontVideoWritingFailed
 }
