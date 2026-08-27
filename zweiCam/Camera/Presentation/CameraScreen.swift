@@ -24,7 +24,7 @@ struct CameraScreen: View {
                 cameraPreview
                 modeSelector
                 Spacer()
-                shutterButton
+                cameraButton
                     .padding(.bottom, 34)
             }
             .padding(.top, 18)
@@ -91,6 +91,22 @@ struct CameraScreen: View {
         }
     }
 
+    private var cameraButton: some View {
+
+        ZStack {
+
+            shutterButton
+                .opacity(selectedMode == .photo ? 1 : 0)
+                .disabled(selectedMode != .photo)
+
+            videoButton
+                .opacity(selectedMode == .video ? 1 : 0)
+                .disabled(selectedMode != .video)
+
+        }
+
+    }
+
     private var shutterButton: some View {
 
         Button {
@@ -122,6 +138,18 @@ struct CameraScreen: View {
                         .padding(9)
                 )
                 .frame(width: 82, height: 82)
+        }
+        .buttonStyle(.plain)
+    }
+    
+    private var videoButton: some View {
+        Button {
+            debugPrint("Video button tapped")
+        } label: {
+            Circle()
+                .strokeBorder(Color.red, lineWidth: 5)
+                .frame(width: 82, height: 82)
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
     }
