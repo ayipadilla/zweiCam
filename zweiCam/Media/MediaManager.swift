@@ -21,7 +21,6 @@ actor MediaManager {
         backImage: UIImage,
         frontImage: UIImage
     ) async throws -> Post {
-
         let postID = UUID()
 
         let backMediaPath = try await saveImage(
@@ -55,7 +54,6 @@ actor MediaManager {
 
         var posts = try loadPosts()
         posts.append(post)
-
         try savePosts(posts)
 
         return post
@@ -64,7 +62,9 @@ actor MediaManager {
     func loadPosts() throws -> [Post] {
         let postsFileURL = try postsFileURL()
 
-        guard FileManager.default.fileExists(atPath: postsFileURL.path) else {
+        guard FileManager.default.fileExists(
+            atPath: postsFileURL.path
+        ) else {
             return []
         }
 
@@ -98,16 +98,19 @@ actor MediaManager {
         _ image: UIImage,
         postID: UUID
     ) async throws -> String {
-
         let mediaID = UUID()
-        let relativePath = "\(Storage.mediaDirectoryName)/\(postID.uuidString)/\(mediaID.uuidString).jpg"
+
+        let relativePath =
+            "\(Storage.mediaDirectoryName)/\(postID.uuidString)/\(mediaID.uuidString).jpg"
 
         let fileURL = try fileURL(
             forRelativePath: relativePath
         )
 
         let imageData = try await Task.detached(priority: .utility) {
-            guard let data = image.jpegData(compressionQuality: 0.9) else {
+            guard let data = image.jpegData(
+                compressionQuality: 0.9
+            ) else {
                 throw MediaManagerError.failedToCreateImageData
             }
 
@@ -131,7 +134,6 @@ actor MediaManager {
         backImage: UIImage,
         frontImage: UIImage
     ) -> UIImage {
-
         let thumbnailWidth: CGFloat = 600
 
         let backAspectRatio =
@@ -147,7 +149,6 @@ actor MediaManager {
         )
 
         return renderer.image { _ in
-
             backImage.draw(
                 in: CGRect(
                     origin: .zero,
@@ -173,7 +174,6 @@ actor MediaManager {
             )
 
             frontPath.addClip()
-
             frontImage.draw(in: frontRect)
 
             UIColor.black.setStroke()
@@ -181,31 +181,63 @@ actor MediaManager {
             frontPath.stroke()
         }
     }
-    
-    func saveVideoAssets(
-        backVideoURL: URL,
-        frontVideoURL: URL,
-        audioURL: URL,
+
+    func saveVideoPost(
+        recording: RecordingManager.RecordingResult
+    ) async throws -> Post {
+        let postID = UUID()
+
+        let videoPaths = try moveVideoAssets(
+            recording: recording,
+            postID: postID
+        )
+
+        let thumbnailImage = createThumbnail(
+            backImage: recording.backThumbnail,
+            frontImage: recording.frontThumbnail
+        )
+
+        let thumbnailPath = try await saveImage(
+            thumbnailImage,
+            postID: postID
+        )
+
+        let post = Post(
+            id: postID,
+            createdAt: Date(),
+            mediaType: .video,
+            backMediaPath: videoPaths.backVideoPath,
+            frontMediaPath: videoPaths.frontVideoPath,
+            thumbnailPath: thumbnailPath
+        )
+
+        var posts = try loadPosts()
+        posts.append(post)
+        try savePosts(posts)
+
+        return post
+    }
+
+    private func moveVideoAssets(
+        recording: RecordingManager.RecordingResult,
         postID: UUID
     ) throws -> (
         backVideoPath: String,
         frontVideoPath: String,
-        audioPath: String
+        audioPath: String?
     ) {
-        let directoryPath = "\(Storage.mediaDirectoryName)/\(postID.uuidString)"
+        let directoryPath =
+            "\(Storage.mediaDirectoryName)/\(postID.uuidString)"
 
         let backVideoPath = "\(directoryPath)/back.mov"
         let frontVideoPath = "\(directoryPath)/front.mov"
-        let audioPath = "\(directoryPath)/audio.m4a"
 
         let backVideoFileURL = try fileURL(
             forRelativePath: backVideoPath
         )
+
         let frontVideoFileURL = try fileURL(
             forRelativePath: frontVideoPath
-        )
-        let audioFileURL = try fileURL(
-            forRelativePath: audioPath
         )
 
         try FileManager.default.createDirectory(
@@ -213,20 +245,32 @@ actor MediaManager {
             withIntermediateDirectories: true
         )
 
-        try FileManager.default.copyItem(
-            at: backVideoURL,
+        try FileManager.default.moveItem(
+            at: recording.backVideoURL,
             to: backVideoFileURL
         )
 
-        try FileManager.default.copyItem(
-            at: frontVideoURL,
+        try FileManager.default.moveItem(
+            at: recording.frontVideoURL,
             to: frontVideoFileURL
         )
 
-        try FileManager.default.copyItem(
-            at: audioURL,
-            to: audioFileURL
-        )
+        var audioPath: String?
+
+        if let audioURL = recording.audioURL {
+            let path = "\(directoryPath)/audio.m4a"
+
+            let audioFileURL = try fileURL(
+                forRelativePath: path
+            )
+
+            try FileManager.default.moveItem(
+                at: audioURL,
+                to: audioFileURL
+            )
+
+            audioPath = path
+        }
 
         return (
             backVideoPath: backVideoPath,
@@ -240,9 +284,7 @@ actor MediaManager {
     private func savePosts(
         _ posts: [Post]
     ) throws {
-
         let postsFileURL = try postsFileURL()
-
         let directoryURL = postsFileURL.deletingLastPathComponent()
 
         try FileManager.default.createDirectory(
@@ -271,13 +313,11 @@ actor MediaManager {
     private func fileURL(
         forRelativePath relativePath: String
     ) throws -> URL {
-
         try applicationSupportDirectory()
             .appendingPathComponent(relativePath)
     }
 
     private func applicationSupportDirectory() throws -> URL {
-
         guard let directoryURL = FileManager.default.urls(
             for: .applicationSupportDirectory,
             in: .userDomainMask

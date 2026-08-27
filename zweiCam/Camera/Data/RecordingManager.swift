@@ -9,10 +9,13 @@ import AVFoundation
 import UIKit
 
 final class RecordingManager {
-    
-    struct VideoThumbnails {
-        let back: UIImage
-        let front: UIImage
+
+    struct RecordingResult {
+        let backVideoURL: URL
+        let frontVideoURL: URL
+        let audioURL: URL?
+        let backThumbnail: UIImage
+        let frontThumbnail: UIImage
     }
 
     private var isRecording = false
@@ -25,10 +28,13 @@ final class RecordingManager {
     private var backVideoInput: AVAssetWriterInput?
     private var frontVideoInput: AVAssetWriterInput?
     private var audioInput: AVAssetWriterInput?
-    
+
     private var backVideoURL: URL?
     private var frontVideoURL: URL?
     private var audioURL: URL?
+
+    private var backThumbnail: UIImage?
+    private var frontThumbnail: UIImage?
 
     func startRecording() throws {
         guard !isRecording else {
@@ -36,6 +42,8 @@ final class RecordingManager {
         }
 
         recordingStartTime = nil
+        backThumbnail = nil
+        frontThumbnail = nil
 
         let backVideoURL = createTemporaryURL(
             filename: "back.mov"
@@ -44,7 +52,7 @@ final class RecordingManager {
         let frontVideoURL = createTemporaryURL(
             filename: "front.mov"
         )
-        
+
         let audioURL = createTemporaryURL(
             filename: "audio.m4a"
         )
@@ -62,22 +70,12 @@ final class RecordingManager {
             outputURL: frontVideoURL,
             fileType: .mov
         )
-        
+
         audioWriter = try AVAssetWriter(
             outputURL: audioURL,
             fileType: .m4a
         )
 
-        backVideoInput = AVAssetWriterInput(
-            mediaType: .video,
-            outputSettings: nil
-        )
-
-        frontVideoInput = AVAssetWriterInput(
-            mediaType: .video,
-            outputSettings: nil
-        )
-        
         audioInput = AVAssetWriterInput(
             mediaType: .audio,
             outputSettings: [
@@ -92,58 +90,42 @@ final class RecordingManager {
             let backVideoWriter,
             let frontVideoWriter,
             let audioWriter,
-            let backVideoInput,
-            let frontVideoInput,
             let audioInput
         else {
             return
         }
 
-        guard backVideoWriter.canAdd(backVideoInput) else {
-            throw RecordingError.cannotAddBackVideoInput
-        }
-
-        guard frontVideoWriter.canAdd(frontVideoInput) else {
-            throw RecordingError.cannotAddFrontVideoInput
-        }
-        
         guard audioWriter.canAdd(audioInput) else {
             throw RecordingError.cannotAddAudioInput
         }
 
-        backVideoWriter.add(backVideoInput)
-        frontVideoWriter.add(frontVideoInput)
         audioWriter.add(audioInput)
-        
+
         isRecording = true
 
         debugPrint("Recording writers configured")
     }
 
-    func stopRecording() async throws -> (
-        backVideoURL: URL,
-        frontVideoURL: URL,
-        audioURL: URL
-    ) {
-        guard isRecording,
-              let backVideoWriter,
-              let frontVideoWriter,
-              let audioWriter,
-              let backVideoInput,
-              let frontVideoInput,
-              let audioInput,
-              let backVideoURL,
-              let frontVideoURL,
-              let audioURL
+    func stopRecording() async throws -> RecordingResult {
+        guard
+            isRecording,
+            let backVideoWriter,
+            let frontVideoWriter,
+            let audioWriter,
+            let backVideoURL,
+            let frontVideoURL,
+            let audioURL,
+            let backThumbnail,
+            let frontThumbnail
         else {
             throw RecordingError.recordingNotFound
         }
 
         isRecording = false
 
-        backVideoInput.markAsFinished()
-        frontVideoInput.markAsFinished()
-        audioInput.markAsFinished()
+        backVideoInput?.markAsFinished()
+        frontVideoInput?.markAsFinished()
+        audioInput?.markAsFinished()
 
         await backVideoWriter.finishWriting()
         await frontVideoWriter.finishWriting()
@@ -156,17 +138,19 @@ final class RecordingManager {
         guard frontVideoWriter.status == .completed else {
             throw RecordingError.frontVideoWritingFailed
         }
-        
+
         guard audioWriter.status == .completed else {
             throw RecordingError.audioWritingFailed
         }
 
         debugPrint("Back + front video and audio recordings finished")
 
-        return (
+        return RecordingResult(
             backVideoURL: backVideoURL,
             frontVideoURL: frontVideoURL,
-            audioURL: audioURL
+            audioURL: audioURL,
+            backThumbnail: backThumbnail,
+            frontThumbnail: frontThumbnail
         )
     }
 
@@ -176,7 +160,16 @@ final class RecordingManager {
         appendVideo(
             sampleBuffer: sampleBuffer,
             writer: backVideoWriter,
-            input: backVideoInput
+            input: backVideoInput,
+            setInput: { [weak self] input in
+                self?.backVideoInput = input
+            },
+            shouldCaptureThumbnail: { [weak self] in
+                self?.backThumbnail == nil
+            },
+            setThumbnail: { [weak self] thumbnail in
+                self?.backThumbnail = thumbnail
+            }
         )
     }
 
@@ -186,18 +179,30 @@ final class RecordingManager {
         appendVideo(
             sampleBuffer: sampleBuffer,
             writer: frontVideoWriter,
-            input: frontVideoInput
+            input: frontVideoInput,
+            setInput: { [weak self] input in
+                self?.frontVideoInput = input
+            },
+            shouldCaptureThumbnail: { [weak self] in
+                self?.frontThumbnail == nil
+            },
+            setThumbnail: { [weak self] thumbnail in
+                self?.frontThumbnail = thumbnail
+            }
         )
     }
-    
+
     private func appendVideo(
         sampleBuffer: CMSampleBuffer,
         writer: AVAssetWriter?,
-        input: AVAssetWriterInput?
+        input: AVAssetWriterInput?,
+        setInput: (AVAssetWriterInput) -> Void,
+        shouldCaptureThumbnail: () -> Bool,
+        setThumbnail: (UIImage) -> Void
     ) {
-        guard isRecording,
-              let writer,
-              let input
+        guard
+            isRecording,
+            let writer
         else {
             return
         }
@@ -210,7 +215,33 @@ final class RecordingManager {
             recordingStartTime = presentationTime
         }
 
-        if writer.status == .unknown {
+        var videoInput = input
+
+        if videoInput == nil {
+            guard let formatDescription =
+                CMSampleBufferGetFormatDescription(sampleBuffer)
+            else {
+                return
+            }
+
+            let newInput = AVAssetWriterInput(
+                mediaType: .video,
+                outputSettings: nil,
+                sourceFormatHint: formatDescription
+            )
+
+            guard writer.canAdd(newInput) else {
+                return
+            }
+
+            writer.add(newInput)
+            setInput(newInput)
+            videoInput = newInput
+
+            guard writer.status == .unknown else {
+                return
+            }
+
             writer.startWriting()
 
             if let recordingStartTime {
@@ -220,15 +251,20 @@ final class RecordingManager {
             }
         }
 
-        guard writer.status == .writing else {
+        guard
+            writer.status == .writing,
+            let videoInput,
+            videoInput.isReadyForMoreMediaData
+        else {
             return
         }
 
-        guard input.isReadyForMoreMediaData else {
-            return
+        if shouldCaptureThumbnail(),
+           let image = image(from: sampleBuffer) {
+            setThumbnail(image)
         }
 
-        input.append(sampleBuffer)
+        videoInput.append(sampleBuffer)
     }
 
     func appendAudio(
@@ -271,10 +307,29 @@ final class RecordingManager {
         audioInput.append(sampleBuffer)
     }
 
+    private func image(
+        from sampleBuffer: CMSampleBuffer
+    ) -> UIImage? {
+        guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+            return nil
+        }
+
+        let ciImage = CIImage(cvPixelBuffer: imageBuffer)
+        let context = CIContext()
+
+        guard let cgImage = context.createCGImage(
+            ciImage,
+            from: ciImage.extent
+        ) else {
+            return nil
+        }
+
+        return UIImage(cgImage: cgImage)
+    }
+
     private func createTemporaryURL(
         filename: String
     ) -> URL {
-
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent(filename)
 
@@ -282,45 +337,6 @@ final class RecordingManager {
 
         return url
     }
-    
-    func generateThumbnails(
-        backVideoURL: URL,
-        frontVideoURL: URL
-    ) async throws -> VideoThumbnails {
-
-        async let backThumbnail = generateThumbnail(
-            from: backVideoURL
-        )
-
-        async let frontThumbnail = generateThumbnail(
-            from: frontVideoURL
-        )
-
-        return try await VideoThumbnails(
-            back: backThumbnail,
-            front: frontThumbnail
-        )
-    }
-    
-    private func generateThumbnail(
-        from videoURL: URL
-    ) async throws -> UIImage {
-
-        let asset = AVURLAsset(url: videoURL)
-
-        let imageGenerator = AVAssetImageGenerator(
-            asset: asset
-        )
-
-        imageGenerator.appliesPreferredTrackTransform = true
-
-        let cgImage = try await imageGenerator.image(
-            at: .zero
-        ).image
-
-        return UIImage(cgImage: cgImage)
-    }
-
 }
 
 private enum RecordingError: Error {

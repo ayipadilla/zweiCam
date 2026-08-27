@@ -9,23 +9,27 @@ import AVFoundation
 import UIKit
 
 final class CameraSessionManager {
+
     private let multiCamSession = AVCaptureMultiCamSession()
-    
+
     let backPreviewLayer = AVCaptureVideoPreviewLayer()
     let frontPreviewLayer = AVCaptureVideoPreviewLayer()
 
     private let backPhotoOutput = AVCapturePhotoOutput()
     private let frontPhotoOutput = AVCapturePhotoOutput()
-    
+
     private var photoCaptureDelegate: PhotoCaptureDelegate?
-    
+
     private var isAudioConfigured = false
     private var isVideoCaptureConfigured = false
     private var isRecording = false
+
     private var videoPorts: VideoPorts?
+
     private let backVideoOutput = AVCaptureVideoDataOutput()
     private let frontVideoOutput = AVCaptureVideoDataOutput()
     private let audioOutput = AVCaptureAudioDataOutput()
+
     private let recordingManager = RecordingManager()
 
     private lazy var backSampleBufferDelegate = SampleBufferDelegate(
@@ -45,31 +49,35 @@ final class CameraSessionManager {
     ) { [weak self] sampleBuffer in
         self?.handleAudioSampleBuffer(sampleBuffer)
     }
+
     private let backVideoOutputQueue = DispatchQueue(
         label: "com.moment.backVideoOutput"
     )
+
     private let frontVideoOutputQueue = DispatchQueue(
         label: "com.moment.frontVideoOutput"
     )
+
     private let audioOutputQueue = DispatchQueue(
         label: "com.moment.audioOutput"
     )
-    
+
     func isMultiCamSupported() -> Bool {
         AVCaptureMultiCamSession.isMultiCamSupported
     }
-    
+
     // MARK: - Setup
 
     private struct VideoPorts {
         let back: AVCaptureInput.Port
         let front: AVCaptureInput.Port
     }
-    
+
     private func configureInputs(
         backCameraInput: AVCaptureDeviceInput,
         frontCameraInput: AVCaptureDeviceInput
     ) throws {
+
         guard multiCamSession.canAddInput(backCameraInput) else {
             throw CameraSessionError.cannotAddInput
         }
@@ -81,8 +89,9 @@ final class CameraSessionManager {
         multiCamSession.addInputWithNoConnections(backCameraInput)
         multiCamSession.addInputWithNoConnections(frontCameraInput)
     }
-    
+
     func configureVideoCapture() {
+
         guard !isVideoCaptureConfigured else {
             return
         }
@@ -96,6 +105,7 @@ final class CameraSessionManager {
 
         do {
             multiCamSession.beginConfiguration()
+
             defer {
                 multiCamSession.commitConfiguration()
             }
@@ -106,12 +116,14 @@ final class CameraSessionManager {
             )
 
             isVideoCaptureConfigured = true
+
         } catch {
             debugPrint("Failed to configure video outputs: \(error)")
         }
     }
 
     func configureAudio() {
+
         guard !isAudioConfigured else {
             return
         }
@@ -176,11 +188,12 @@ final class CameraSessionManager {
             debugPrint("Failed to configure audio: \(error)")
         }
     }
-    
+
     private func configureVideoOutputs(
         backVideoPort: AVCaptureInput.Port,
         frontVideoPort: AVCaptureInput.Port
     ) throws {
+
         backVideoOutput.setSampleBufferDelegate(
             backSampleBufferDelegate,
             queue: backVideoOutputQueue
@@ -229,34 +242,38 @@ final class CameraSessionManager {
 
         debugPrint("Back and front video outputs configured")
     }
-    
+
     private func getAudioPort(
         microphoneInput: AVCaptureDeviceInput,
         microphone: AVCaptureDevice
     ) throws -> AVCaptureInput.Port {
+
         guard let audioPort = microphoneInput.ports(
             for: .audio,
             sourceDeviceType: microphone.deviceType,
             sourceDevicePosition: microphone.position
         ).first else {
+
             debugPrint("Microphone audio port not found")
             throw CameraSessionError.audioPortNotFound
         }
 
         return audioPort
     }
-    
+
     private func getVideoPorts(
         backCameraInput: AVCaptureDeviceInput,
         frontCameraInput: AVCaptureDeviceInput,
         backCamera: AVCaptureDevice,
         frontCamera: AVCaptureDevice
     ) throws -> VideoPorts {
+
         guard let backVideoPort = backCameraInput.ports(
             for: .video,
             sourceDeviceType: backCamera.deviceType,
             sourceDevicePosition: backCamera.position
         ).first else {
+
             debugPrint("Back camera video port not found")
             throw CameraSessionError.videoPortNotFound
         }
@@ -266,6 +283,7 @@ final class CameraSessionManager {
             sourceDeviceType: frontCamera.deviceType,
             sourceDevicePosition: frontCamera.position
         ).first else {
+
             debugPrint("Front camera video port not found")
             throw CameraSessionError.videoPortNotFound
         }
@@ -275,80 +293,83 @@ final class CameraSessionManager {
             front: frontVideoPort
         )
     }
-    
+
     private func configurePreview(
         backVideoPort: AVCaptureInput.Port,
         frontVideoPort: AVCaptureInput.Port
     ) throws {
+
         backPreviewLayer.setSessionWithNoConnection(multiCamSession)
         frontPreviewLayer.setSessionWithNoConnection(multiCamSession)
-        
+
         let backPreviewConnection = AVCaptureConnection(
             inputPort: backVideoPort,
             videoPreviewLayer: backPreviewLayer
         )
-        
+
         let frontPreviewConnection = AVCaptureConnection(
             inputPort: frontVideoPort,
             videoPreviewLayer: frontPreviewLayer
         )
-        
+
         guard multiCamSession.canAddConnection(backPreviewConnection) else {
             debugPrint("Cannot add back preview connection to multi-cam session")
             throw CameraSessionError.cannotAddConnection
         }
-        
+
         guard multiCamSession.canAddConnection(frontPreviewConnection) else {
             debugPrint("Cannot add front preview connection to multi-cam session")
             throw CameraSessionError.cannotAddConnection
         }
-        
+
         multiCamSession.addConnection(backPreviewConnection)
         multiCamSession.addConnection(frontPreviewConnection)
     }
-    
+
     private func configurePhotoOutputs(
         backVideoPort: AVCaptureInput.Port,
         frontVideoPort: AVCaptureInput.Port
     ) throws {
+
         guard multiCamSession.canAddOutput(backPhotoOutput) else {
             debugPrint("Cannot add back photo output to multi-cam session")
             throw CameraSessionError.cannotAddOutput
         }
-        
+
         guard multiCamSession.canAddOutput(frontPhotoOutput) else {
             debugPrint("Cannot add front photo output to multi-cam session")
             throw CameraSessionError.cannotAddOutput
         }
-        
+
         multiCamSession.addOutputWithNoConnections(backPhotoOutput)
         multiCamSession.addOutputWithNoConnections(frontPhotoOutput)
-        
+
         let backPhotoConnection = AVCaptureConnection(
             inputPorts: [backVideoPort],
             output: backPhotoOutput
         )
-        
+
         let frontPhotoConnection = AVCaptureConnection(
             inputPorts: [frontVideoPort],
             output: frontPhotoOutput
         )
-        
+
         guard multiCamSession.canAddConnection(backPhotoConnection) else {
             debugPrint("Cannot add back photo connection to multi-cam session")
             throw CameraSessionError.cannotAddConnection
         }
-        
+
         guard multiCamSession.canAddConnection(frontPhotoConnection) else {
             debugPrint("Cannot add front photo connection to multi-cam session")
             throw CameraSessionError.cannotAddConnection
         }
-        
+
         multiCamSession.addConnection(backPhotoConnection)
         multiCamSession.addConnection(frontPhotoConnection)
     }
-    
+
     func start() {
+
         guard let backCamera = getBackCamera() else {
             debugPrint("Back camera not found")
             return
@@ -363,12 +384,14 @@ final class CameraSessionManager {
             let backCameraInput = try AVCaptureDeviceInput(
                 device: backCamera
             )
+
             let frontCameraInput = try AVCaptureDeviceInput(
                 device: frontCamera
             )
 
             do {
                 multiCamSession.beginConfiguration()
+
                 defer {
                     multiCamSession.commitConfiguration()
                 }
@@ -403,23 +426,27 @@ final class CameraSessionManager {
             debugPrint(
                 "Back and front camera previews configured and multi-cam session started"
             )
+
         } catch {
             debugPrint("Failed to configure camera session: \(error)")
         }
     }
 
     func stop() {
+
         guard multiCamSession.isRunning else {
             return
         }
 
         multiCamSession.stopRunning()
+
         debugPrint("Multi-cam session stopped")
     }
 
     private func handleBackVideoSampleBuffer(
         _ sampleBuffer: CMSampleBuffer
     ) {
+
         guard isRecording else {
             return
         }
@@ -432,6 +459,7 @@ final class CameraSessionManager {
     private func handleFrontVideoSampleBuffer(
         _ sampleBuffer: CMSampleBuffer
     ) {
+
         guard isRecording else {
             return
         }
@@ -444,6 +472,7 @@ final class CameraSessionManager {
     private func handleAudioSampleBuffer(
         _ sampleBuffer: CMSampleBuffer
     ) {
+
         guard isRecording else {
             return
         }
@@ -454,97 +483,123 @@ final class CameraSessionManager {
     }
 
     // MARK: - Photo
+
     private func capturePhoto(
         from photoOutput: AVCapturePhotoOutput
     ) async throws -> UIImage {
-        
+
         let settings = AVCapturePhotoSettings()
         let delegate = PhotoCaptureDelegate()
-        
+
         photoCaptureDelegate = delegate
-        
+
         return try await withCheckedThrowingContinuation { continuation in
             delegate.continuation = continuation
-            
+
             photoOutput.capturePhoto(
                 with: settings,
                 delegate: delegate
             )
         }
     }
-    
+
     func captureDualPhoto() async throws -> (
         backImage: UIImage,
         frontImage: UIImage
     ) {
+
         let backImage = try await capturePhoto(
             from: backPhotoOutput
         )
-        
+
         try await Task.sleep(for: .seconds(1.5))
-        
+
         let frontImage = try await capturePhoto(
             from: frontPhotoOutput
         )
-        
+
         return (
             backImage: backImage,
             frontImage: frontImage
         )
     }
-    
+
     func getBackCamera() -> AVCaptureDevice? {
-        AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)
+        AVCaptureDevice.default(
+            .builtInWideAngleCamera,
+            for: .video,
+            position: .back
+        )
     }
-    
+
     func getFrontCamera() -> AVCaptureDevice? {
-        AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front)
+        AVCaptureDevice.default(
+            .builtInWideAngleCamera,
+            for: .video,
+            position: .front
+        )
     }
-    
+
     func requestCameraAccess() async -> Bool {
+
         switch AVCaptureDevice.authorizationStatus(for: .video) {
+
         case .authorized:
             true
+
         case .notDetermined:
             await AVCaptureDevice.requestAccess(for: .video)
+
         case .denied, .restricted:
             false
+
         @unknown default:
             false
         }
     }
-    
+
     // MARK: - Video
+
     func requestMicrophoneAccess() async -> Bool {
+
         switch AVCaptureDevice.authorizationStatus(for: .audio) {
+
         case .authorized:
             true
+
         case .notDetermined:
             await AVCaptureDevice.requestAccess(for: .audio)
+
         case .denied, .restricted:
             false
+
         @unknown default:
             false
         }
     }
-    
+
     func startRecording() {
+
         guard !isRecording else {
             return
         }
 
         do {
             try recordingManager.startRecording()
+
             isRecording = true
+
             debugPrint("Recording started")
+
         } catch {
             debugPrint("Failed to start recording: \(error)")
         }
     }
 
-    func stopRecording() async {
+    func stopRecording() async -> RecordingManager.RecordingResult? {
+
         guard isRecording else {
-            return
+            return nil
         }
 
         isRecording = false
@@ -554,17 +609,12 @@ final class CameraSessionManager {
 
             debugPrint("Back video: \(recording.backVideoURL)")
             debugPrint("Front video: \(recording.frontVideoURL)")
-            debugPrint("Audio: \(recording.audioURL)")
-            
-            let thumbnails = try await recordingManager.generateThumbnails(
-                backVideoURL: recording.backVideoURL,
-                frontVideoURL: recording.frontVideoURL
-            )
 
-            debugPrint("Back thumbnail generated: \(thumbnails.back.size)")
-            debugPrint("Front thumbnail generated: \(thumbnails.front.size)")
+            return recording
+
         } catch {
             debugPrint("Failed to stop recording: \(error)")
+            return nil
         }
     }
 }

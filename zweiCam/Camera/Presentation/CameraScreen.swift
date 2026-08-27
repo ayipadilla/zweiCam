@@ -153,8 +153,7 @@ struct CameraScreen: View {
         Button {
             if isRecording {
                 Task {
-                    await cameraSessionManager.stopRecording()
-                    isRecording = false
+                    await stopRecording()
                 }
             } else {
                 cameraSessionManager.startRecording()
@@ -167,6 +166,26 @@ struct CameraScreen: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
+    }
+    
+    private func stopRecording() async {
+        let recording = await cameraSessionManager.stopRecording()
+
+        isRecording = false
+
+        guard let recording else {
+            return
+        }
+
+        do {
+            let post = try await mediaManager.saveVideoPost(
+                recording: recording
+            )
+
+            debugPrint("Video post saved: \(post.id)")
+        } catch {
+            debugPrint("Failed to save video post: \(error)")
+        }
     }
 }
 
