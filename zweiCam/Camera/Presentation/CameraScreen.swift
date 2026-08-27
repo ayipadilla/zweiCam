@@ -152,8 +152,10 @@ struct CameraScreen: View {
     private var videoButton: some View {
         Button {
             if isRecording {
-                cameraSessionManager.stopRecording()
-                isRecording = false
+                Task {
+                    await cameraSessionManager.stopRecording()
+                    isRecording = false
+                }
             } else {
                 cameraSessionManager.startRecording()
                 isRecording = true

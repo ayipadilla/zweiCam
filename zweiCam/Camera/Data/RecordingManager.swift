@@ -80,7 +80,12 @@ final class RecordingManager {
         
         audioInput = AVAssetWriterInput(
             mediaType: .audio,
-            outputSettings: nil
+            outputSettings: [
+                AVFormatIDKey: kAudioFormatMPEG4AAC,
+                AVSampleRateKey: 44_100,
+                AVNumberOfChannelsKey: 1,
+                AVEncoderBitRateKey: 128_000
+            ]
         )
 
         guard

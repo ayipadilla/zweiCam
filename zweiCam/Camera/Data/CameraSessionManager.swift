@@ -26,6 +26,7 @@ final class CameraSessionManager {
     private let backVideoOutput = AVCaptureVideoDataOutput()
     private let frontVideoOutput = AVCaptureVideoDataOutput()
     private let audioOutput = AVCaptureAudioDataOutput()
+    private let recordingManager = RecordingManager()
 
     private lazy var backSampleBufferDelegate = SampleBufferDelegate(
         streamName: "back video"
@@ -423,7 +424,9 @@ final class CameraSessionManager {
             return
         }
 
-        debugPrint("Recording back video sample buffer")
+        recordingManager.appendBackVideo(
+            sampleBuffer: sampleBuffer
+        )
     }
 
     private func handleFrontVideoSampleBuffer(
@@ -433,7 +436,9 @@ final class CameraSessionManager {
             return
         }
 
-        debugPrint("Recording front video sample buffer")
+        recordingManager.appendFrontVideo(
+            sampleBuffer: sampleBuffer
+        )
     }
 
     private func handleAudioSampleBuffer(
@@ -443,7 +448,9 @@ final class CameraSessionManager {
             return
         }
 
-        debugPrint("Recording audio sample buffer")
+        recordingManager.appendAudio(
+            sampleBuffer: sampleBuffer
+        )
     }
 
     // MARK: - Photo
@@ -526,17 +533,31 @@ final class CameraSessionManager {
             return
         }
 
-        isRecording = true
-        debugPrint("Recording started")
+        do {
+            try recordingManager.startRecording()
+            isRecording = true
+            debugPrint("Recording started")
+        } catch {
+            debugPrint("Failed to start recording: \(error)")
+        }
     }
 
-    func stopRecording() {
+    func stopRecording() async {
         guard isRecording else {
             return
         }
 
         isRecording = false
-        debugPrint("Recording stopped")
+
+        do {
+            let recording = try await recordingManager.stopRecording()
+
+            debugPrint("Back video: \(recording.backVideoURL)")
+            debugPrint("Front video: \(recording.frontVideoURL)")
+            debugPrint("Audio: \(recording.audioURL)")
+        } catch {
+            debugPrint("Failed to stop recording: \(error)")
+        }
     }
 }
 
