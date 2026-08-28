@@ -9,16 +9,23 @@ import SwiftUI
 
 struct FeedThumbnailView: View {
 
+    // MARK: - Properties
+
     let post: Post
 
     private let mediaManager = MediaManager()
 
     @State private var thumbnail: UIImage?
 
+    // MARK: - Body
+
     var body: some View {
         Rectangle()
             .fill(Color.white.opacity(0.15))
-            .aspectRatio(3.0 / 4.0, contentMode: .fit) // TODO: Fix aspect ratio
+            .aspectRatio(
+                3.0 / 4.0,
+                contentMode: .fit
+            ) // TODO: Fix aspect ratio
             .overlay {
                 if let thumbnail {
                     Image(uiImage: thumbnail)
@@ -38,6 +45,8 @@ struct FeedThumbnailView: View {
                 await loadThumbnail()
             }
     }
+
+    // MARK: - Actions
 
     private func loadThumbnail() async {
         do {
