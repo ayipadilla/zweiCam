@@ -10,6 +10,8 @@ import UIKit
 
 actor MediaManager {
 
+    // MARK: - Types
+
     private enum Storage {
         static let mediaDirectoryName = "Media"
         static let postsFileName = "posts.json"
@@ -55,6 +57,45 @@ actor MediaManager {
 
         var posts = try loadPosts()
         posts.append(post)
+
+        try savePosts(posts)
+
+        return post
+    }
+
+    func saveVideoPost(
+        recording: RecordingManager.RecordingResult
+    ) async throws -> Post {
+        let postID = UUID()
+
+        let videoPaths = try moveVideoAssets(
+            recording: recording,
+            postID: postID
+        )
+
+        let thumbnailImage = createThumbnail(
+            backImage: recording.backThumbnail,
+            frontImage: recording.frontThumbnail
+        )
+
+        let thumbnailPath = try await saveImage(
+            thumbnailImage,
+            postID: postID
+        )
+
+        let post = Post(
+            id: postID,
+            createdAt: Date(),
+            mediaType: .video,
+            backMediaPath: videoPaths.backVideoPath,
+            frontMediaPath: videoPaths.frontVideoPath,
+            audioMediaPath: videoPaths.audioPath,
+            thumbnailPath: thumbnailPath
+        )
+
+        var posts = try loadPosts()
+        posts.append(post)
+
         try savePosts(posts)
 
         return post
@@ -184,46 +225,10 @@ actor MediaManager {
             frontImage.draw(in: frontRect)
 
             UIColor.black.setStroke()
+
             frontPath.lineWidth = 3
             frontPath.stroke()
         }
-    }
-
-    func saveVideoPost(
-        recording: RecordingManager.RecordingResult
-    ) async throws -> Post {
-        let postID = UUID()
-
-        let videoPaths = try moveVideoAssets(
-            recording: recording,
-            postID: postID
-        )
-
-        let thumbnailImage = createThumbnail(
-            backImage: recording.backThumbnail,
-            frontImage: recording.frontThumbnail
-        )
-
-        let thumbnailPath = try await saveImage(
-            thumbnailImage,
-            postID: postID
-        )
-
-        let post = Post(
-            id: postID,
-            createdAt: Date(),
-            mediaType: .video,
-            backMediaPath: videoPaths.backVideoPath,
-            frontMediaPath: videoPaths.frontVideoPath,
-            audioMediaPath: videoPaths.audioPath,
-            thumbnailPath: thumbnailPath
-        )
-
-        var posts = try loadPosts()
-        posts.append(post)
-        try savePosts(posts)
-
-        return post
     }
 
     private func moveVideoAssets(
