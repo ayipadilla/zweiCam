@@ -37,6 +37,7 @@ final class CameraViewModel {
     var isMultiCamSupported = false
     var hasCameraAccess = false
     var isRecording = false
+    var isLoading = true
 
     // MARK: - Camera Preview
 
@@ -51,6 +52,10 @@ final class CameraViewModel {
     // MARK: - Lifecycle
 
     func onAppear() async {
+        defer {
+            isLoading = false
+        }
+
         isMultiCamSupported =
             cameraSessionManager.isMultiCamSupported()
 

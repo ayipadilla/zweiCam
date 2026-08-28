@@ -20,16 +20,21 @@ struct CameraView: View {
             Color.black
                 .ignoresSafeArea()
 
-            VStack(spacing: 24) {
-                cameraPreview
-                modeSelector
-
-                Spacer()
-
-                cameraButton
-                    .padding(.bottom, 34)
+            if viewModel.isLoading {
+                ProgressView()
+            } else if !viewModel.isMultiCamSupported {
+                errorStateView(
+                    title: "Oops!",
+                    message: "Your device does not support multi-camera recording :("
+                )
+            } else if !viewModel.hasCameraAccess {
+                errorStateView(
+                    title: "Oops!",
+                    message: "zweiCam needs Camera access to create posts. Update these in your Settings."
+                )
+            } else {
+                cameraContent
             }
-            .padding(.top, 18)
         }
         .task {
             await viewModel.onAppear()
@@ -40,6 +45,17 @@ struct CameraView: View {
     }
 
     // MARK: - Components
+    
+    private var cameraContent: some View {
+        VStack(spacing: 24) {
+            cameraPreview
+            modeSelector
+            Spacer()
+            cameraButton
+                .padding(.bottom, 34)
+        }
+        .padding(.top, 18)
+    }
 
     private var cameraPreview: some View {
         ZStack {
@@ -140,6 +156,26 @@ struct CameraView: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
+    }
+    
+    // MARK: Helper
+
+    private func errorStateView(
+        title: String,
+        message: String
+    ) -> some View {
+        VStack(spacing: 12) {
+            Text(title)
+                .font(.title2.weight(.bold))
+
+            Text(message)
+                .font(.body)
+                .foregroundStyle(.white.opacity(0.7))
+                .multilineTextAlignment(.center)
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 32)
+         .offset(y: -60)
     }
 }
 
