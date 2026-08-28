@@ -10,6 +10,7 @@ import SwiftUI
 import UIKit
 
 struct CameraPreviewView: UIViewRepresentable {
+
     let backPreviewLayer: AVCaptureVideoPreviewLayer
     let frontPreviewLayer: AVCaptureVideoPreviewLayer
 
@@ -18,12 +19,17 @@ struct CameraPreviewView: UIViewRepresentable {
             backPreviewLayer: backPreviewLayer,
             frontPreviewLayer: frontPreviewLayer
         )
+
         backPreviewLayer.videoGravity = .resizeAspectFill
         frontPreviewLayer.videoGravity = .resizeAspectFill
+
         return view
     }
 
-    func updateUIView(_ uiView: PreviewContainerView, context: Context) {
+    func updateUIView(
+        _ uiView: PreviewContainerView,
+        context: Context
+    ) {
         uiView.updatePreviewLayers(
             backPreviewLayer: backPreviewLayer,
             frontPreviewLayer: frontPreviewLayer
@@ -31,7 +37,10 @@ struct CameraPreviewView: UIViewRepresentable {
     }
 }
 
+// MARK: - Preview Container
+
 final class PreviewContainerView: UIView {
+
     private enum Layout {
         static let frontPreviewInsetRatio: CGFloat = 0.04
         static let frontPreviewWidthRatio: CGFloat = 0.32
@@ -49,11 +58,14 @@ final class PreviewContainerView: UIView {
     ) {
         self.backPreviewLayer = backPreviewLayer
         self.frontPreviewLayer = frontPreviewLayer
+
         super.init(frame: .zero)
 
         clipsToBounds = true
+
         layer.addSublayer(backPreviewLayer)
         layer.addSublayer(frontPreviewLayer)
+
         configureFrontPreviewLayer()
     }
 
@@ -66,12 +78,16 @@ final class PreviewContainerView: UIView {
 
         backPreviewLayer.frame = bounds
 
-        let frontPreviewInset = bounds.width * Layout.frontPreviewInsetRatio
+        let frontPreviewInset =
+            bounds.width * Layout.frontPreviewInsetRatio
+
         let frontPreviewWidth = min(
             bounds.width * Layout.frontPreviewWidthRatio,
             bounds.height * 0.28
         )
-        let frontPreviewHeight = frontPreviewWidth / Layout.frontPreviewAspectRatio
+
+        let frontPreviewHeight =
+            frontPreviewWidth / Layout.frontPreviewAspectRatio
 
         frontPreviewLayer.frame = CGRect(
             x: frontPreviewInset,
