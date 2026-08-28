@@ -8,6 +8,10 @@
 import AVFoundation
 import UIKit
 
+enum PhotoCaptureError: Error {
+    case failedToCreateImage
+}
+
 final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
 
     var continuation: CheckedContinuation<UIImage, Error>?
@@ -32,13 +36,9 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
 
         finish(with: .success(image))
     }
-    
+
     private func finish(with result: Result<UIImage, Error>) {
         continuation?.resume(with: result)
         continuation = nil
     }
-}
-
-enum PhotoCaptureError: Error {
-    case failedToCreateImage
 }
