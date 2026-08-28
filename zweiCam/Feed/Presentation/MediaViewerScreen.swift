@@ -5,23 +5,22 @@
 //  Created by Ayi Padilla on 26.08.26.
 //
 
-import SwiftUI
 import AVKit
+import SwiftUI
 
 struct MediaViewerScreen: View {
 
-    // MARK: - Properties
+    // MARK: - State
 
-    let post: Post
+    @State private var viewModel: MediaViewerViewModel
 
-    private let mediaManager = MediaManager()
+    // MARK: - Initialization
 
-    @State private var backImage: UIImage?
-    @State private var frontImage: UIImage?
-
-    @State private var backPlayer: AVPlayer?
-    @State private var frontPlayer: AVPlayer?
-    @State private var audioPlayer: AVPlayer?
+    init(post: Post) {
+        _viewModel = State(
+            initialValue: MediaViewerViewModel(post: post)
+        )
+    }
 
     // MARK: - Body
 
@@ -31,7 +30,7 @@ struct MediaViewerScreen: View {
                 .ignoresSafeArea()
 
             VStack {
-                if post.mediaType == .photo {
+                if viewModel.post.mediaType == .photo {
                     photoContent
                 } else {
                     videoContent
@@ -41,7 +40,7 @@ struct MediaViewerScreen: View {
             }
         }
         .navigationTitle(
-            post.createdAt.formatted(
+            viewModel.post.createdAt.formatted(
                 .dateTime
                     .day()
                     .month(.wide)
@@ -49,19 +48,17 @@ struct MediaViewerScreen: View {
         )
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            await loadMedia()
+            await viewModel.onAppear()
         }
         .onDisappear {
-            backPlayer?.pause()
-            frontPlayer?.pause()
-            audioPlayer?.pause()
+            viewModel.onDisappear()
         }
     }
 
     // MARK: - Photo
 
     private var photoContent: some View {
-        if let backImage {
+        if let backImage = viewModel.backImage {
             return AnyView(
                 ZStack(alignment: .topLeading) {
                     Image(uiImage: backImage)
@@ -74,7 +71,7 @@ struct MediaViewerScreen: View {
                             )
                         )
 
-                    if let frontImage {
+                    if let frontImage = viewModel.frontImage {
                         Image(uiImage: frontImage)
                             .resizable()
                             .scaledToFill()
@@ -111,7 +108,7 @@ struct MediaViewerScreen: View {
     // MARK: - Video
 
     private var videoContent: some View {
-        if let backPlayer {
+        if let backPlayer = viewModel.backPlayer {
             return AnyView(
                 ZStack(alignment: .topLeading) {
                     VideoPlayer(player: backPlayer)
@@ -126,7 +123,7 @@ struct MediaViewerScreen: View {
                             )
                         )
 
-                    if let frontPlayer {
+                    if let frontPlayer = viewModel.frontPlayer {
                         VideoPlayer(player: frontPlayer)
                             .frame(
                                 width: 120,
@@ -156,53 +153,6 @@ struct MediaViewerScreen: View {
             )
         } else {
             return AnyView(EmptyView())
-        }
-    }
-
-    // MARK: - Media Loading
-
-    private func loadMedia() async {
-        do {
-            if post.mediaType == .photo {
-                backImage = try await mediaManager.loadImage(
-                    atRelativePath: post.backMediaPath
-                )
-
-                frontImage = try await mediaManager.loadImage(
-                    atRelativePath: post.frontMediaPath
-                )
-            } else {
-                let backURL = try await mediaManager.loadMediaURL(
-                    atRelativePath: post.backMediaPath
-                )
-
-                let frontURL = try await mediaManager.loadMediaURL(
-                    atRelativePath: post.frontMediaPath
-                )
-
-                let newBackPlayer = AVPlayer(url: backURL)
-                let newFrontPlayer = AVPlayer(url: frontURL)
-
-                backPlayer = newBackPlayer
-                frontPlayer = newFrontPlayer
-
-                newBackPlayer.play()
-                newFrontPlayer.play()
-
-                if let audioPath = post.audioMediaPath {
-                    let audioURL = try await mediaManager.loadMediaURL(
-                        atRelativePath: audioPath
-                    )
-
-                    let newAudioPlayer = AVPlayer(url: audioURL)
-
-                    audioPlayer = newAudioPlayer
-
-                    newAudioPlayer.play()
-                }
-            }
-        } catch {
-            debugPrint("Failed to load post media: \(error)")
         }
     }
 }
