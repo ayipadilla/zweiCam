@@ -19,19 +19,59 @@ final class FeedViewModel {
 
     var posts: [Post] = []
 
+    // MARK: - Pagination
+
+    private let pageSize = 20
+    private var currentPage = 0
+    private var isLoading = false
+    private var hasMorePosts = true
+
     // MARK: - Lifecycle
 
     func onAppear() async {
-        await loadPosts()
+        posts = []
+        currentPage = 0
+        hasMorePosts = true
+
+        await loadNextPage()
     }
 
     // MARK: - Feed
 
-    private func loadPosts() async {
+    func loadMoreIfNeeded(currentPost: Post) async {
+        guard
+            currentPost.id == posts.last?.id,
+            hasMorePosts,
+            !isLoading
+        else {
+            return
+        }
+
+        await loadNextPage()
+    }
+
+    private func loadNextPage() async {
+        guard !isLoading, hasMorePosts else {
+            return
+        }
+
+        isLoading = true
+
         do {
-            posts = try await mediaManager.loadPosts()
+            let offset = currentPage * pageSize
+
+            let newPosts = try await mediaManager.loadPosts(
+                limit: pageSize,
+                offset: offset
+            )
+
+            posts.append(contentsOf: newPosts)
+            currentPage += 1
+            hasMorePosts = newPosts.count == pageSize
         } catch {
             debugPrint("Failed to load posts: \(error)")
         }
+
+        isLoading = false
     }
 }

@@ -43,6 +43,13 @@ struct FeedView: View {
                                 FeedThumbnailView(post: post)
                             }
                             .buttonStyle(.plain)
+                            .onAppear {
+                                Task {
+                                    await viewModel.loadMoreIfNeeded(
+                                        currentPost: post
+                                    )
+                                }
+                            }
                         }
                     }
                     .padding(.horizontal, 2)

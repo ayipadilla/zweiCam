@@ -121,9 +121,24 @@ actor MediaManager {
 
         let data = try Data(contentsOf: postsFileURL)
 
-        return try JSONDecoder().decode(
+        let posts = try JSONDecoder().decode(
             [Post].self,
             from: data
+        )
+
+        return posts.sorted { $0.createdAt > $1.createdAt }
+    }
+    
+    func loadPosts(
+        limit: Int,
+        offset: Int
+    ) throws -> [Post] {
+        let posts = try loadPosts()
+
+        return Array(
+            posts
+                .dropFirst(offset)
+                .prefix(limit)
         )
     }
 
