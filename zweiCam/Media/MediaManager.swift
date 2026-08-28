@@ -17,6 +17,15 @@ actor MediaManager {
         static let postsFileName = "posts.json"
     }
 
+    private let storageDirectory: URL
+    
+    init(storageDirectory: URL? = nil) {
+            self.storageDirectory = storageDirectory
+                ?? FileManager.default.urls(
+                    for: .applicationSupportDirectory,
+                    in: .userDomainMask
+                ).first!
+        }
     // MARK: - Posts
 
     func savePost(
@@ -317,7 +326,7 @@ actor MediaManager {
     }
 
     private func postsFileURL() throws -> URL {
-        try applicationSupportDirectory()
+        storageDirectory
             .appendingPathComponent(
                 Storage.postsFileName
             )
@@ -326,19 +335,8 @@ actor MediaManager {
     private func fileURL(
         forRelativePath relativePath: String
     ) throws -> URL {
-        try applicationSupportDirectory()
+        storageDirectory
             .appendingPathComponent(relativePath)
-    }
-
-    private func applicationSupportDirectory() throws -> URL {
-        guard let directoryURL = FileManager.default.urls(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask
-        ).first else {
-            throw MediaManagerError.applicationSupportDirectoryNotFound
-        }
-
-        return directoryURL
     }
 }
 
