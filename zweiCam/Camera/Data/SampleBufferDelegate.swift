@@ -12,7 +12,6 @@ final class SampleBufferDelegate: NSObject,
     AVCaptureAudioDataOutputSampleBufferDelegate {
 
     let streamName: String
-
     var onSampleBuffer: ((CMSampleBuffer) -> Void)?
 
     init(
@@ -30,5 +29,4 @@ final class SampleBufferDelegate: NSObject,
     ) {
         onSampleBuffer?(sampleBuffer)
     }
-
 }
