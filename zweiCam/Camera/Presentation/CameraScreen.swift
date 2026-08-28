@@ -11,13 +11,7 @@ struct CameraScreen: View {
 
     // MARK: - State
 
-    private let cameraSessionManager = CameraSessionManager()
-    private let mediaManager = MediaManager()
-
-    @State private var selectedMode = CameraMode.photo
-    @State private var isMultiCamSupported = false
-    @State private var hasCameraAccess = false
-    @State private var isRecording = false
+    @State private var viewModel = CameraViewModel()
 
     // MARK: - Body
 
@@ -38,32 +32,10 @@ struct CameraScreen: View {
             .padding(.top, 18)
         }
         .task {
-            isMultiCamSupported =
-                cameraSessionManager.isMultiCamSupported()
-
-            guard isMultiCamSupported else {
-                print("MultiCam is not supported")
-                return
-            }
-
-            print("MultiCam is supported")
-
-            hasCameraAccess =
-                await cameraSessionManager.requestCameraAccess()
-
-            print("Camera access: \(hasCameraAccess)")
-
-            let hasMicrophoneAccess =
-                await cameraSessionManager.requestMicrophoneAccess()
-
-            print("Microphone access: \(hasMicrophoneAccess)")
-
-            if isMultiCamSupported && hasCameraAccess {
-                cameraSessionManager.start()
-            }
+            await viewModel.onAppear()
         }
         .onDisappear {
-            cameraSessionManager.stop()
+            viewModel.onDisappear()
         }
     }
 
@@ -73,10 +45,10 @@ struct CameraScreen: View {
         ZStack {
             cameraPreviewBackground
 
-            if hasCameraAccess {
+            if viewModel.hasCameraAccess {
                 CameraPreviewView(
-                    backPreviewLayer: cameraSessionManager.backPreviewLayer,
-                    frontPreviewLayer: cameraSessionManager.frontPreviewLayer
+                    backPreviewLayer: viewModel.backPreviewLayer,
+                    frontPreviewLayer: viewModel.frontPreviewLayer
                 )
                 .clipShape(
                     RoundedRectangle(
@@ -112,16 +84,12 @@ struct CameraScreen: View {
         HStack(spacing: 28) {
             ForEach(CameraMode.allCases) { mode in
                 Button {
-                    selectedMode = mode
-
-                    if mode == .video {
-                        cameraSessionManager.configureVideoCapture()
-                    }
+                    viewModel.selectMode(mode)
                 } label: {
                     Text(mode.title)
                         .font(.caption.weight(.bold))
                         .foregroundStyle(
-                            selectedMode == mode
+                            viewModel.selectedMode == mode
                                 ? .yellow
                                 : .white.opacity(0.55)
                         )
@@ -133,40 +101,19 @@ struct CameraScreen: View {
     private var cameraButton: some View {
         ZStack {
             shutterButton
-                .opacity(selectedMode == .photo ? 1 : 0)
-                .disabled(selectedMode != .photo)
+                .opacity(viewModel.selectedMode == .photo ? 1 : 0)
+                .disabled(viewModel.selectedMode != .photo)
 
             videoButton
-                .opacity(selectedMode == .video ? 1 : 0)
-                .disabled(selectedMode != .video)
+                .opacity(viewModel.selectedMode == .video ? 1 : 0)
+                .disabled(viewModel.selectedMode != .video)
         }
     }
 
     private var shutterButton: some View {
         Button {
             Task {
-                do {
-                    let photos =
-                        try await cameraSessionManager.captureDualPhoto()
-
-                    debugPrint(
-                        "Back photo captured: \(photos.backImage.size)"
-                    )
-                    debugPrint(
-                        "Front photo captured: \(photos.frontImage.size)"
-                    )
-
-                    let post = try await mediaManager.savePost(
-                        backImage: photos.backImage,
-                        frontImage: photos.frontImage
-                    )
-
-                    debugPrint("Post saved: \(post.id)")
-                } catch {
-                    debugPrint(
-                        "Failed to capture photo: \(error)"
-                    )
-                }
+                await viewModel.capturePhoto()
             }
         } label: {
             Circle()
@@ -183,13 +130,8 @@ struct CameraScreen: View {
 
     private var videoButton: some View {
         Button {
-            if isRecording {
-                Task {
-                    await stopRecording()
-                }
-            } else {
-                cameraSessionManager.startRecording()
-                isRecording = true
+            Task {
+                await viewModel.toggleRecording()
             }
         } label: {
             Circle()
@@ -198,47 +140,6 @@ struct CameraScreen: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-    }
-
-    // MARK: - Actions
-
-    private func stopRecording() async {
-        let recording =
-            await cameraSessionManager.stopRecording()
-
-        isRecording = false
-
-        guard let recording else {
-            return
-        }
-
-        do {
-            let post = try await mediaManager.saveVideoPost(
-                recording: recording
-            )
-
-            debugPrint("Video post saved: \(post.id)")
-        } catch {
-            debugPrint(
-                "Failed to save video post: \(error)"
-            )
-        }
-    }
-}
-
-// MARK: - Camera Mode
-
-private enum CameraMode: String, CaseIterable, Identifiable {
-
-    case video
-    case photo
-
-    var id: Self {
-        self
-    }
-
-    var title: String {
-        rawValue.uppercased()
     }
 }
 
