@@ -70,6 +70,12 @@ final class CameraSessionManager {
         self?.handleAudioSampleBuffer(sampleBuffer)
     }
 
+    // MARK: - Initialization
+
+    init() {
+        observeSessionInterruptions()
+    }
+
     // MARK: - Setup
 
     func isMultiCamSupported() -> Bool {
@@ -440,6 +446,45 @@ final class CameraSessionManager {
         multiCamSession.stopRunning()
 
         debugPrint("Multi-cam session stopped")
+    }
+    
+    // MARK: - Session Lifecycle
+    private func observeSessionInterruptions() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleSessionInterruption),
+            name: AVCaptureSession.wasInterruptedNotification,
+            object: multiCamSession
+        )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleSessionInterruptionEnded),
+            name: AVCaptureSession.interruptionEndedNotification,
+            object: multiCamSession
+        )
+    }
+    
+    @objc private func handleSessionInterruption(
+        _ notification: Notification
+    ) {
+        debugPrint("Multi-cam session interrupted")
+
+        if isRecording {
+            Task {
+                _ = await stopRecording()
+            }
+        }
+    }
+
+    @objc private func handleSessionInterruptionEnded(
+        _ notification: Notification
+    ) {
+        debugPrint("Multi-cam session interruption ended")
+
+        if !multiCamSession.isRunning {
+            start()
+        }
     }
 
     // MARK: - Sample Buffers
