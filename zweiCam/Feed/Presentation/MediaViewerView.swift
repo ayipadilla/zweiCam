@@ -122,6 +122,8 @@ struct MediaViewerView: View {
                                 style: .continuous
                             )
                         )
+                        .allowsHitTesting(false)
+                    // TODO: Add custom playback control across all the players
 
                     if let frontPlayer = viewModel.frontPlayer {
                         VideoPlayer(player: frontPlayer)
