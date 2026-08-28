@@ -8,7 +8,7 @@
 import AVKit
 import SwiftUI
 
-struct MediaViewerScreen: View {
+struct MediaViewerView: View {
 
     // MARK: - State
 

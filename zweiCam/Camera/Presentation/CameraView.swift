@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct CameraScreen: View {
+struct CameraView: View {
 
     // MARK: - State
 
@@ -144,5 +144,5 @@ struct CameraScreen: View {
 }
 
 #Preview {
-    CameraScreen()
+    CameraView()
 }

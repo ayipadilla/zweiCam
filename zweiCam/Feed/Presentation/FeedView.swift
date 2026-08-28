@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct FeedScreen: View {
+struct FeedView: View {
 
     // MARK: - State
 
@@ -35,7 +35,7 @@ struct FeedScreen: View {
                 ) {
                     ForEach(viewModel.posts) { post in
                         NavigationLink {
-                            MediaViewerScreen(post: post)
+                            MediaViewerView(post: post)
                         } label: {
                             FeedThumbnailView(post: post)
                         }
@@ -51,7 +51,7 @@ struct FeedScreen: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink {
-                    CameraScreen()
+                    CameraView()
                 } label: {
                     Image(systemName: "camera")
                         .foregroundStyle(.white)
@@ -66,6 +66,6 @@ struct FeedScreen: View {
 
 #Preview {
     NavigationStack {
-        FeedScreen()
+        FeedView()
     }
 }

@@ -11,7 +11,7 @@ struct MainScreen: View {
 
     var body: some View {
         NavigationStack {
-            FeedScreen()
+            FeedView()
         }
     }
 }
