@@ -88,6 +88,23 @@ final class CameraViewModel {
     func onDisappear() {
         cameraSessionManager.stop()
     }
+    
+    // MARK: - App Lifecycle
+
+    func onEnterBackground() {
+        cameraSessionManager.stop()
+    }
+
+    func onEnterForeground() {
+        guard
+            isMultiCamSupported,
+            hasCameraAccess
+        else {
+            return
+        }
+
+        cameraSessionManager.start()
+    }
 
     // MARK: - Camera
 

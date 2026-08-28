@@ -20,6 +20,7 @@ final class CameraSessionManager {
     // MARK: - Properties
 
     private let multiCamSession = AVCaptureMultiCamSession()
+    private var isSessionConfigured = false
 
     let backPreviewLayer = AVCaptureVideoPreviewLayer()
     let frontPreviewLayer = AVCaptureVideoPreviewLayer()
@@ -358,6 +359,16 @@ final class CameraSessionManager {
     }
 
     func start() {
+        if isSessionConfigured {
+            guard !multiCamSession.isRunning else {
+                return
+            }
+            
+            multiCamSession.startRunning()
+            debugPrint("Multi-cam session restarted")
+            return
+        }
+
         guard let backCamera = getBackCamera() else {
             debugPrint("Back camera not found")
             return
@@ -407,6 +418,8 @@ final class CameraSessionManager {
                     backVideoPort: videoPorts.back,
                     frontVideoPort: videoPorts.front
                 )
+                
+                isSessionConfigured = true
             }
 
             multiCamSession.startRunning()

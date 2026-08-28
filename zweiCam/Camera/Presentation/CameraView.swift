@@ -42,6 +42,20 @@ struct CameraView: View {
         .onDisappear {
             viewModel.onDisappear()
         }
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: UIApplication.didEnterBackgroundNotification
+            )
+        ) { _ in
+            viewModel.onEnterBackground()
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: UIApplication.willEnterForegroundNotification
+            )
+        ) { _ in
+            viewModel.onEnterForeground()
+        }
     }
 
     // MARK: - Components
