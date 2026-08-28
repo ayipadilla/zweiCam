@@ -29,21 +29,25 @@ struct FeedView: View {
                 .ignoresSafeArea()
 
             ScrollView {
-                LazyVGrid(
-                    columns: columns,
-                    spacing: 2
-                ) {
-                    ForEach(viewModel.posts) { post in
-                        NavigationLink {
-                            MediaViewerView(post: post)
-                        } label: {
-                            FeedThumbnailView(post: post)
+                if viewModel.posts.isEmpty {
+                    emptyState
+                } else {
+                    LazyVGrid(
+                        columns: columns,
+                        spacing: 2
+                    ) {
+                        ForEach(viewModel.posts) { post in
+                            NavigationLink {
+                                MediaViewerView(post: post)
+                            } label: {
+                                FeedThumbnailView(post: post)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
+                    .padding(.horizontal, 2)
+                    .padding(.top, 16)
                 }
-                .padding(.horizontal, 2)
-                .padding(.top, 16)
             }
         }
         .navigationTitle("zweiCam")
@@ -61,6 +65,22 @@ struct FeedView: View {
         .task {
             await viewModel.onAppear()
         }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 12) {
+            Text("You have no posts yet.")
+                .font(.headline)
+
+            Text("Start creating one by tapping on Camera ⤴")
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.6))
+                .multilineTextAlignment(.center)
+        }
+        .foregroundStyle(.white)
+        .frame(maxWidth: .infinity)
+        .padding(.top, 120)
+        .padding(.horizontal, 32)
     }
 }
 
