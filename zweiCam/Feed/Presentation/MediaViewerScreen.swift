@@ -10,6 +10,8 @@ import AVKit
 
 struct MediaViewerScreen: View {
 
+    // MARK: - Properties
+
     let post: Post
 
     private let mediaManager = MediaManager()
@@ -21,15 +23,14 @@ struct MediaViewerScreen: View {
     @State private var frontPlayer: AVPlayer?
     @State private var audioPlayer: AVPlayer?
 
+    // MARK: - Body
+
     var body: some View {
-
         ZStack {
-
             Color.black
                 .ignoresSafeArea()
 
             VStack {
-
                 if post.mediaType == .photo {
                     photoContent
                 } else {
@@ -57,13 +58,12 @@ struct MediaViewerScreen: View {
         }
     }
 
+    // MARK: - Photo
+
     private var photoContent: some View {
-
         if let backImage {
-
             return AnyView(
                 ZStack(alignment: .topLeading) {
-
                     Image(uiImage: backImage)
                         .resizable()
                         .scaledToFit()
@@ -75,7 +75,6 @@ struct MediaViewerScreen: View {
                         )
 
                     if let frontImage {
-
                         Image(uiImage: frontImage)
                             .resizable()
                             .scaledToFill()
@@ -104,22 +103,22 @@ struct MediaViewerScreen: View {
                 }
                 .padding(.horizontal, 20)
             )
-
         } else {
-
             return AnyView(EmptyView())
         }
     }
 
+    // MARK: - Video
+
     private var videoContent: some View {
-
         if let backPlayer {
-
             return AnyView(
                 ZStack(alignment: .topLeading) {
-
                     VideoPlayer(player: backPlayer)
-                        .aspectRatio(3 / 4, contentMode: .fit)
+                        .aspectRatio(
+                            3 / 4,
+                            contentMode: .fit
+                        )
                         .clipShape(
                             RoundedRectangle(
                                 cornerRadius: 20,
@@ -128,7 +127,6 @@ struct MediaViewerScreen: View {
                         )
 
                     if let frontPlayer {
-
                         VideoPlayer(player: frontPlayer)
                             .frame(
                                 width: 120,
@@ -156,19 +154,16 @@ struct MediaViewerScreen: View {
                 }
                 .padding(.horizontal, 20)
             )
-
         } else {
-
             return AnyView(EmptyView())
         }
     }
 
+    // MARK: - Media Loading
+
     private func loadMedia() async {
-
         do {
-
             if post.mediaType == .photo {
-
                 backImage = try await mediaManager.loadImage(
                     atRelativePath: post.backMediaPath
                 )
@@ -176,9 +171,7 @@ struct MediaViewerScreen: View {
                 frontImage = try await mediaManager.loadImage(
                     atRelativePath: post.frontMediaPath
                 )
-
             } else {
-
                 let backURL = try await mediaManager.loadMediaURL(
                     atRelativePath: post.backMediaPath
                 )
@@ -202,13 +195,13 @@ struct MediaViewerScreen: View {
                     )
 
                     let newAudioPlayer = AVPlayer(url: audioURL)
+
                     audioPlayer = newAudioPlayer
+
                     newAudioPlayer.play()
                 }
             }
-
         } catch {
-
             debugPrint("Failed to load post media: \(error)")
         }
     }
