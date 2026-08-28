@@ -11,9 +11,7 @@ struct FeedScreen: View {
 
     // MARK: - State
 
-    private let mediaManager = MediaManager()
-
-    @State private var posts: [Post] = []
+    @State private var viewModel = FeedViewModel()
 
     private let columns = Array(
         repeating: GridItem(
@@ -35,7 +33,7 @@ struct FeedScreen: View {
                     columns: columns,
                     spacing: 2
                 ) {
-                    ForEach(posts) { post in
+                    ForEach(viewModel.posts) { post in
                         NavigationLink {
                             MediaViewerScreen(post: post)
                         } label: {
@@ -61,17 +59,7 @@ struct FeedScreen: View {
             }
         }
         .task {
-            await loadPosts()
-        }
-    }
-
-    // MARK: - Actions
-
-    private func loadPosts() async {
-        do {
-            posts = try await mediaManager.loadPosts()
-        } catch {
-            debugPrint("Failed to load posts: \(error)")
+            await viewModel.onAppear()
         }
     }
 }
