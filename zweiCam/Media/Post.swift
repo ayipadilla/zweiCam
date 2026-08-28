@@ -7,6 +7,8 @@
 
 import Foundation
 
+// MARK: - Types
+
 enum MediaType: String, Codable {
     case photo
     case video
