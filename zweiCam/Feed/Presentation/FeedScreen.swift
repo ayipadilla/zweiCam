@@ -9,14 +9,21 @@ import SwiftUI
 
 struct FeedScreen: View {
 
+    // MARK: - State
+
     private let mediaManager = MediaManager()
 
+    @State private var posts: [Post] = []
+
     private let columns = Array(
-        repeating: GridItem(.flexible(), spacing: 2),
+        repeating: GridItem(
+            .flexible(),
+            spacing: 2
+        ),
         count: 4
     )
 
-    @State private var posts: [Post] = []
+    // MARK: - Body
 
     var body: some View {
         ZStack {
@@ -57,6 +64,8 @@ struct FeedScreen: View {
             await loadPosts()
         }
     }
+
+    // MARK: - Actions
 
     private func loadPosts() async {
         do {
