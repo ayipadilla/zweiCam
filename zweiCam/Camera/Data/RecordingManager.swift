@@ -10,6 +10,8 @@ import UIKit
 
 final class RecordingManager {
 
+    // MARK: - Types
+
     struct RecordingResult {
         let backVideoURL: URL
         let frontVideoURL: URL
@@ -17,6 +19,8 @@ final class RecordingManager {
         let backThumbnail: UIImage
         let frontThumbnail: UIImage
     }
+
+    // MARK: - State
 
     private var isRecording = false
     private var recordingStartTime: CMTime?
@@ -36,6 +40,8 @@ final class RecordingManager {
     private var backThumbnail: UIImage?
     private var frontThumbnail: UIImage?
 
+    // MARK: - Recording
+
     func startRecording() throws {
         guard !isRecording else {
             return
@@ -48,11 +54,9 @@ final class RecordingManager {
         let backVideoURL = createTemporaryURL(
             filename: "back.mov"
         )
-
         let frontVideoURL = createTemporaryURL(
             filename: "front.mov"
         )
-
         let audioURL = createTemporaryURL(
             filename: "audio.m4a"
         )
@@ -65,12 +69,10 @@ final class RecordingManager {
             outputURL: backVideoURL,
             fileType: .mov
         )
-
         frontVideoWriter = try AVAssetWriter(
             outputURL: frontVideoURL,
             fileType: .mov
         )
-
         audioWriter = try AVAssetWriter(
             outputURL: audioURL,
             fileType: .m4a
@@ -87,8 +89,6 @@ final class RecordingManager {
         )
 
         guard
-            let backVideoWriter,
-            let frontVideoWriter,
             let audioWriter,
             let audioInput
         else {
@@ -100,7 +100,6 @@ final class RecordingManager {
         }
 
         audioWriter.add(audioInput)
-
         isRecording = true
 
         debugPrint("Recording writers configured")
@@ -153,6 +152,8 @@ final class RecordingManager {
             frontThumbnail: frontThumbnail
         )
     }
+
+    // MARK: - Video
 
     func appendBackVideo(
         sampleBuffer: CMSampleBuffer
@@ -236,7 +237,7 @@ final class RecordingManager {
                     AVVideoHeightKey: Int(dimensions.height)
                 ]
             )
-            
+
             newInput.transform = CGAffineTransform(rotationAngle: .pi / 2)
 
             guard writer.canAdd(newInput) else {
@@ -275,6 +276,8 @@ final class RecordingManager {
 
         videoInput.append(sampleBuffer)
     }
+
+    // MARK: - Audio
 
     func appendAudio(
         sampleBuffer: CMSampleBuffer
@@ -316,10 +319,14 @@ final class RecordingManager {
         audioInput.append(sampleBuffer)
     }
 
+    // MARK: - Helpers
+
     private func image(
         from sampleBuffer: CMSampleBuffer
     ) -> UIImage? {
-        guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+        guard
+            let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)
+        else {
             return nil
         }
 
@@ -333,7 +340,11 @@ final class RecordingManager {
             return nil
         }
 
-        return UIImage(cgImage: cgImage, scale: 1.0, orientation: .right)
+        return UIImage(
+            cgImage: cgImage,
+            scale: 1.0,
+            orientation: .right
+        )
     }
 
     private func createTemporaryURL(
@@ -348,9 +359,9 @@ final class RecordingManager {
     }
 }
 
+// MARK: - Errors
+
 private enum RecordingError: Error {
-    case cannotAddBackVideoInput
-    case cannotAddFrontVideoInput
     case cannotAddAudioInput
     case recordingNotFound
     case backVideoWritingFailed
